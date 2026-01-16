@@ -126,15 +126,21 @@ document.addEventListener('DOMContentLoaded', () => {
         resultContainer.classList.remove('hidden');
         resultContainer.classList.add('show');
 
+        let timeout = 5000; // Default 5s
+
         if (code) {
             const label = document.getElementById('couponValueLabel');
             couponCode.innerText = code;
             if (val) label.innerText = val + ":";
             couponContainer.classList.remove('hidden');
+            timeout = 10000; // Keep longer if they need to screenshot (10s is still better than nothing, but let's make it 7s as requested "faster")
+            timeout = 8000;
+        } else {
+            timeout = 4000; // Faster if just saying thank you
         }
 
         setTimeout(() => {
             location.reload();
-        }, 10000);
+        }, timeout);
     }
 });
