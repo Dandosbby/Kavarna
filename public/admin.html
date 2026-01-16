@@ -358,12 +358,14 @@
                     loginState.classList.add('hidden');
                     dashboardState.classList.remove('hidden');
                 } else {
+                    const errorData = await response.json();
                     errorMsg.style.display = 'block';
+                    errorMsg.textContent = errorData.error || 'Incorrect Password';
                 }
             } catch (err) {
                 console.error(err);
                 errorMsg.style.display = 'block';
-                errorMsg.textContent = 'Connection Error';
+                errorMsg.textContent = 'Server Connection Error';
             } finally {
                 loginBtn.textContent = 'Login';
                 loginBtn.disabled = false;
