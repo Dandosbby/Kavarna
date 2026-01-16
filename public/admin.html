@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Kavárna</title>
+    <link rel="stylesheet" href="style.css"> <!-- Reuse glass styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* Specific Admin Styles */
+        .admin-login {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .admin-table-container {
+            max-height: 400px;
+            /* Scrollable */
+            overflow-y: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            color: var(--text-light);
+            text-align: left;
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.05);
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error {
+            color: #e57373;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 500px;
+            padding: 2.5rem;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+            opacity: 0.7;
+        }
+
+        .modal-close:hover {
+            opacity: 1;
+        }
+
+        .modal-detail-item {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .modal-detail-label {
+            font-weight: 700;
+            color: var(--accent);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .modal-detail-value {
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+
+        tr.clickable {
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        tr.clickable:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="background-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <main class="container" style="max-width: 800px;">
+        <div class="card glass">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h1>Admin Panel</h1>
+                <a href="/"
+                    style="text-decoration: none; color: var(--text-dark); background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-weight: 500;">&larr;
+                    Back to App</a>
+            </div>
+
+            <!-- Login State -->
+            <div id="loginState" class="admin-login">
+                <input type="password" id="passwordInput" placeholder="Password" />
+                <button id="loginBtn">Login</button>
+                <div id="errorMsg" class="error">Incorrect Password</div>
+            </div>
+
+            <!-- Dashboard State -->
+            <div id="dashboardState" class="hidden">
+                <div style="text-align: left; margin-bottom: 1.5rem; display: flex; gap: 2rem;">
+                    <div>
+                        <span
+                            style="opacity: 0.7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Celkem
+                            odpovědí:</span>
+                        <div id="totalAnswers" style="font-size: 1.5rem; font-weight: 700;">0</div>
+                    </div>
+                    <div>
+                        <span
+                            style="opacity: 0.7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Vydané
+                            kupóny:</span>
+                        <div id="totalCoupons" style="font-size: 1.5rem; font-weight: 700;">0</div>
+                    </div>
+                </div>
+                <!-- Navigation -->
+                <div class="nav-tabs"
+                    style="display: flex; gap: 10px; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
+                    <button id="viewFeedbackBtn" class="nav-btn active"
+                        style="padding: 10px 20px; font-size: 1rem; background: rgba(255,255,255,0.1); border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Odpovědi</button>
+                    <button id="viewCouponsBtn" class="nav-btn"
+                        style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Správa
+                        kupónů</button>
+                </div>
+
+                <!-- Feedback View -->
+                <div id="feedbackView" class="admin-table-container">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Answer</th>
+                                <th>Reason</th>
+                                <th>Service Note</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Coupon View -->
+                <div id="couponView" class="admin-table-container hidden">
+                    <div style="margin-bottom: 2rem; display: flex; gap: 10px;">
+                        <input type="text" id="newCouponCode" placeholder="Kód (např. KAVA10)" style="flex: 1;">
+                        <input type="text" id="newCouponValue" placeholder="Hodnota (např. Sleva 10%)" style="flex: 2;">
+                        <button id="addCouponBtn"
+                            style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Přidat</button>
+                    </div>
+                    <table id="couponTable">
+                        <thead>
+                            <tr>
+                                <th>Kód</th>
+                                <th>Hodnota</th>
+                                <th>Stav</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody id="couponTableBody">
+                            <!-- Coupon Rows -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <button id="logoutBtn"
+                    style="margin-top: 20px; background: transparent; border: 1px solid var(--glass-border);">Logout</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="card glass modal-content">
+            <span class="modal-close" id="closeModal">&times;</span>
+            <h2 style="margin-bottom: 2rem;">Feedback Detail</h2>
+
+            <div class="modal-detail-item">
+                <div class="modal-detail-label">DateTime</div>
+                <div id="modalDateTime" class="modal-detail-value"></div>
+            </div>
+
+            <div class="modal-detail-item">
+                <div class="modal-detail-label">Coffee Rating</div>
+                <div id="modalAnswer" class="modal-detail-value"></div>
+            </div>
+
+            <div class="modal-detail-item">
+                <div class="modal-detail-label">Reason for "NE"</div>
+                <div id="modalReason" class="modal-detail-value"></div>
+            </div>
+
+            <div class="modal-detail-item">
+                <div class="modal-detail-label">Service Note</div>
+                <div id="modalService" class="modal-detail-value"></div>
+            </div>
+
+            <div class="modal-detail-item" id="modalCouponContainer">
+                <div class="modal-detail-label">Issued Coupon</div>
+                <div id="modalCoupon" class="modal-detail-value"
+                    style="font-family: monospace; letter-spacing: 2px; font-weight: 700; color: var(--accent);"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const loginState = document.getElementById('loginState');
+        const dashboardState = document.getElementById('dashboardState');
+        const passwordInput = document.getElementById('passwordInput');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMsg = document.getElementById('errorMsg');
+        const tableBody = document.getElementById('tableBody');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const couponTableBody = document.getElementById('couponTableBody');
+        const feedbackView = document.getElementById('feedbackView');
+        const couponView = document.getElementById('couponView');
+        const viewFeedbackBtn = document.getElementById('viewFeedbackBtn');
+        const viewCouponsBtn = document.getElementById('viewCouponsBtn');
+        const newCouponCode = document.getElementById('newCouponCode');
+        const newCouponValue = document.getElementById('newCouponValue');
+        const addCouponBtn = document.getElementById('addCouponBtn');
+
+        // Modal Elements
+        const detailModal = document.getElementById('detailModal');
+        const closeModal = document.getElementById('closeModal');
+        const modalDateTime = document.getElementById('modalDateTime');
+        const modalAnswer = document.getElementById('modalAnswer');
+        const modalReason = document.getElementById('modalReason');
+        const modalService = document.getElementById('modalService');
+        const modalCoupon = document.getElementById('modalCoupon');
+        const modalCouponContainer = document.getElementById('modalCouponContainer');
+
+        const totalAnswersEl = document.getElementById('totalAnswers');
+        const totalCouponsEl = document.getElementById('totalCoupons');
+
+        let allData = [];
+
+        loginBtn.addEventListener('click', attemptLogin);
+        passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin() });
+        logoutBtn.addEventListener('click', () => location.reload());
+
+        viewFeedbackBtn.addEventListener('click', () => switchView('feedback'));
+        viewCouponsBtn.addEventListener('click', () => switchView('coupons'));
+        addCouponBtn.addEventListener('click', addCoupon);
+
+        function switchView(view) {
+            if (view === 'feedback') {
+                feedbackView.classList.remove('hidden');
+                couponView.classList.add('hidden');
+                viewFeedbackBtn.classList.add('active');
+                viewFeedbackBtn.style.background = 'rgba(255,255,255,0.1)';
+                viewCouponsBtn.classList.remove('active');
+                viewCouponsBtn.style.background = 'transparent';
+            } else {
+                feedbackView.classList.add('hidden');
+                couponView.classList.remove('hidden');
+                viewCouponsBtn.classList.add('active');
+                viewCouponsBtn.style.background = 'rgba(255,255,255,0.1)';
+                viewFeedbackBtn.classList.remove('active');
+                viewFeedbackBtn.style.background = 'transparent';
+                fetchCoupons();
+            }
+        }
+
+        async function fetchCoupons() {
+            const password = passwordInput.value;
+            try {
+                const response = await fetch('/api/admin/coupons', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                if (response.ok) {
+                    const coupons = await response.json();
+                    renderCouponTable(coupons);
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        closeModal.addEventListener('click', hideModal);
+        window.addEventListener('click', (e) => { if (e.target === detailModal) hideModal() });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideModal() });
+
+        function hideModal() {
+            detailModal.classList.remove('show');
+        }
+
+        async function attemptLogin() {
+            const password = passwordInput.value;
+            errorMsg.style.display = 'none';
+            loginBtn.textContent = 'Verifying...';
+            loginBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/admin/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    allData = data;
+                    renderTable(data);
+                    updateStats(data);
+                    loginState.classList.add('hidden');
+                    dashboardState.classList.remove('hidden');
+                } else {
+                    errorMsg.style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Connection Error';
+            } finally {
+                loginBtn.textContent = 'Login';
+                loginBtn.disabled = false;
+            }
+        }
+
+        function renderTable(data) {
+            tableBody.innerHTML = '';
+            // Show newest first
+            data.slice().reverse().forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'clickable';
+                const note = row.note ? row.note : '<span style="opacity:0.5">-</span>';
+
+                // Clicking the row (except the action button) shows details
+                tr.onclick = (e) => {
+                    if (e.target.tagName !== 'BUTTON') {
+                        showDetail(row.id);
+                    }
+                };
+
+                tr.innerHTML = `
+                    <td>${row.date}</td>
+                    <td>${row.time}</td>
+                    <td><span style="color: ${row.answer === 'ANO' ? '#81c784' : '#e57373'}">${row.answer}</span></td>
+                    <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${row.note || ''}">${note}</td>
+                    <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${row.serviceNote || ''}">${row.serviceNote || '-'}</td>
+                    <td>
+                        ${row.id ? `<button onclick="deleteEntry('${row.id}'); event.stopPropagation();" style="padding: 4px 10px; font-size: 0.8rem; background: #e57373; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>` : '-'}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function renderCouponTable(coupons) {
+            couponTableBody.innerHTML = '';
+            coupons.forEach(row => {
+                const tr = document.createElement('tr');
+                const isIssued = !!row.feedbackId;
+                const isUsed = row.used;
+
+                let statusText = 'VOLNÝ';
+                let statusColor = '#81c784'; // Green for available
+
+                if (isUsed) {
+                    statusText = 'POUŽITÝ';
+                    statusColor = '#e57373'; // Red for used
+                } else if (isIssued) {
+                    statusText = 'VYDANÝ';
+                    statusColor = '#ffb74d'; // Orange for issued
+                }
+
+                tr.innerHTML = `
+                    <td style="font-family: monospace; letter-spacing: 2px;">${row.code}</td>
+                    <td style="font-weight: 500;">${row.value || '-'}</td>
+                    <td>
+                        <span style="color: ${statusColor}; font-weight: 700;">
+                            ${statusText}
+                        </span>
+                    </td>
+                    <td style="display: flex; gap: 10px;">
+                        <button onclick="toggleCoupon('${row.code}')" style="padding: 6px 12px; font-size: 0.8rem; background: ${isUsed ? 'rgba(255,255,255,0.1)' : '#81c784'}; color: ${isUsed ? 'white' : '#1b5e20'}; border: none; border-radius: 4px; cursor: pointer;">
+                            ${isUsed ? 'Označit jako Platný' : 'Označit jako Použitý'}
+                        </button>
+                        ${!isIssued ? `
+                            <button onclick="deleteCoupon('${row.code}')" style="padding: 6px 12px; font-size: 0.8rem; background: #e57373; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Smazat
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                couponTableBody.appendChild(tr);
+            });
+        }
+
+        async function toggleCoupon(code) {
+            try {
+                const response = await fetch(`/api/admin/coupons/${code}/toggle`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    fetchCoupons(); // Refresh table
+                    // Also refresh main data to keep detail modal in sync
+                    const mainResponse = await fetch('/api/admin/data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ password })
+                    });
+                    if (mainResponse.ok) allData = await mainResponse.json();
+                    updateStats(allData);
+                } else {
+                    alert('Failed to toggle coupon status');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error toggling coupon');
+            }
+        }
+
+        async function addCoupon() {
+            const code = newCouponCode.value.trim();
+            const value = newCouponValue.value.trim();
+
+            if (!code || !value) {
+                alert('Prosím vyplňte kód i hodnotu');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/coupons/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ code, value })
+                });
+
+                if (response.ok) {
+                    newCouponCode.value = '';
+                    newCouponValue.value = '';
+                    fetchCoupons();
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to add coupon');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error adding coupon');
+            }
+        }
+
+        async function deleteCoupon(code) {
+            try {
+                const response = await fetch(`/api/admin/coupons/${code}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    fetchCoupons();
+                } else {
+                    alert('Failed to delete coupon');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error deleting coupon');
+            }
+        }
+
+        function showDetail(id) {
+            const entry = allData.find(d => d.id === id);
+            if (!entry) return;
+
+            modalDateTime.textContent = `${entry.date} at ${entry.time}`;
+            modalAnswer.innerHTML = `<span style="color: ${entry.answer === 'ANO' ? '#81c784' : '#e57373'}">${entry.answer}</span>`;
+            modalReason.textContent = entry.note || 'No reason provided';
+            modalService.textContent = entry.serviceNote || 'No service note provided';
+
+            if (entry.couponCode) {
+                modalCoupon.innerHTML = `
+                    ${entry.couponCode} 
+                    <span style="font-size: 0.8rem; opacity: 0.7; margin-left: 10px;">
+                        (${entry.couponUsed ? 'POUŽITÝ' : 'PLATNÝ'})
+                    </span>
+                `;
+                modalCouponContainer.style.display = 'block';
+            } else {
+                modalCouponContainer.style.display = 'none';
+            }
+
+            detailModal.classList.add('show');
+        }
+
+        function updateStats(data) {
+            totalAnswersEl.textContent = data.length;
+            const couponCount = data.filter(item => item.couponCode).length;
+            totalCouponsEl.textContent = couponCount;
+        }
+
+        async function deleteEntry(id) {
+            const password = passwordInput.value;
+
+            try {
+                const response = await fetch(`/api/admin/data/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': password }
+                });
+
+                if (response.ok) {
+                    attemptLogin();
+                } else {
+                    alert('Failed to delete');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error deleting');
+            }
+        }
+    </script>
+</body>
+
+</html>

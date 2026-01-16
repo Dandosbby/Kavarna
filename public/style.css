@@ -1,0 +1,281 @@
+:root {
+    --primary: #8d6e63;
+    /* Brown 400 */
+    --secondary: #5d4037;
+    /* Brown 700 */
+    --bg-dark: #3e2723;
+    /* Brown 900 */
+    --text-light: #fff8e1;
+    /* Amber 50 */
+    --glass-bg: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --accent: #d7ccc8;
+    /* Brown 100 */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.hidden {
+    display: none !important;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-dark);
+    color: var(--text-light);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+/* Background Animations */
+.background-orbs {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: radial-gradient(circle at 50% 50%, #4e342e 0%, #3e2723 100%);
+}
+
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.4;
+    animation: float 15s infinite ease-in-out;
+}
+
+.orb-1 {
+    width: 500px;
+    height: 500px;
+    background: #a1887f;
+    /* Brown 300 */
+    top: -150px;
+    left: -150px;
+}
+
+.orb-2 {
+    width: 400px;
+    height: 400px;
+    background: #6d4c41;
+    /* Brown 600 */
+    bottom: -100px;
+    right: -100px;
+    animation-delay: -7s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0);
+    }
+
+    50% {
+        transform: translate(40px, 60px);
+    }
+}
+
+/* Glass Card */
+.container {
+    padding: 20px;
+    width: 100%;
+    max-width: 480px;
+}
+
+.card.glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 30px;
+    padding: 4rem 2rem;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s ease;
+}
+
+.card.compact {
+    padding: 2rem;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+h1 {
+    font-weight: 700;
+    font-size: 2.2rem;
+    margin-bottom: 3rem;
+    color: var(--text-light);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Button Group */
+.button-group {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+button {
+    border: none;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    min-width: 120px;
+}
+
+.btn-yes {
+    background: linear-gradient(135deg, #aed581, #7cb342);
+    /* Greenish */
+    color: #1b5e20;
+}
+
+.btn-no {
+    background: linear-gradient(135deg, #e57373, #c62828);
+    /* Reddish */
+    color: #fff;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-yes:hover {
+    background: linear-gradient(135deg, #c5e1a5, #8bc34a);
+}
+
+.btn-no:hover {
+    background: linear-gradient(135deg, #ef9a9a, #ef5350);
+}
+
+
+button:active {
+    transform: scale(0.98);
+}
+
+.follow-up-text {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    color: var(--text-dark);
+}
+
+.button-group.small {
+    gap: 15px;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #d7ccc8, #bcaaa4);
+    color: #4e342e;
+    padding: 12px 30px;
+    font-size: 1rem;
+    min-width: 80px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #aed581, #7cb342);
+    color: #1b5e20;
+    margin-top: 10px;
+}
+
+textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-dark);
+    font-family: inherit;
+    resize: vertical;
+    margin-bottom: 10px;
+    outline: none;
+}
+
+textarea::placeholder {
+    color: rgba(62, 39, 35, 0.6);
+}
+
+#reasonInputContainer {
+    margin-top: 1rem;
+}
+
+/* Result Area */
+.result-container {
+    margin-top: 0;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    height: 0;
+    /* height hack to avoid shift before show, but simple opacity is safer. logic handles hidden class */
+}
+
+.result-container.show {
+    opacity: 1;
+    transform: scale(1);
+    height: auto;
+}
+
+.result-container.hidden {
+    display: none;
+}
+
+#answerText {
+    font-size: 2.2rem;
+    font-weight: 800;
+    margin: 0;
+    line-height: 1.2;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.coupon-container {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    border: 2px dashed rgba(255, 255, 255, 0.4);
+    border-radius: 15px;
+    background: rgba(141, 110, 99, 0.2);
+    /* Subtle brown tint */
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.coupon-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 0.5rem;
+    opacity: 0.8;
+}
+
+.coupon-code {
+    font-size: 2.5rem;
+    font-weight: 800;
+    letter-spacing: 5px;
+    color: #fff8e1;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
