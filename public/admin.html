@@ -248,6 +248,11 @@
 
                 <!-- Stats View -->
                 <div id="statsView" class="hidden">
+                    <div style="margin-bottom: 1rem; text-align: right;">
+                        <button id="refreshStatsBtn"
+                            style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1rem;"
+                            title="Obnovit grafy">🔄 Obnovit grafy</button>
+                    </div>
                     <div id="statsGrid"
                         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
                         <!-- Question Charts will be injected here -->
@@ -256,7 +261,11 @@
 
                 <!-- Feedback View -->
                 <div id="feedbackView" class="admin-table-container">
-                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;">
+                        <button id="refreshFeedbackBtn"
+                            style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;"
+                            title="Obnovit data">🔄</button>
+                        <div style="flex-grow: 1;"></div>
                         <button id="deleteAllBtn"
                             style="background: rgba(229, 115, 115, 0.1); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.2); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🔥🔥
                             Smazat ÚPLNĚ VŠE</button>
@@ -278,9 +287,11 @@
                     </table>
                 </div>
 
-                <!-- Coupon View -->
                 <div id="couponView" class="admin-table-container hidden">
-                    <div style="margin-bottom: 2rem; display: flex; gap: 10px;">
+                    <div style="margin-bottom: 1.5rem; display: flex; gap: 10px; align-items: center;">
+                        <button id="refreshCouponsBtn"
+                            style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;"
+                            title="Obnovit kupóny">🔄</button>
                         <input type="text" id="newCouponCode" placeholder="Kód (např. KAVA10)" style="flex: 1;">
                         <input type="text" id="newCouponValue" placeholder="Hodnota (např. Sleva 10%)" style="flex: 2;">
                         <button id="addCouponBtn"
@@ -372,7 +383,12 @@
         const couponView = document.getElementById('couponView');
         const viewFeedbackBtn = document.getElementById('viewFeedbackBtn');
         const viewCouponsBtn = document.getElementById('viewCouponsBtn');
+        const refreshCouponsBtn = document.getElementById('refreshCouponsBtn');
         const viewQuestionsBtn = document.getElementById('viewQuestionsBtn');
+        const refreshQuestionsBtn = document.getElementById('refreshQuestionsBtn');
+        const refreshFeedbackBtn = document.getElementById('refreshFeedbackBtn');
+        const refreshStatsBtn = document.getElementById('refreshStatsBtn');
+
         const questionsView = document.getElementById('questionsView');
         const questionsList = document.getElementById('questionsList');
         const addQuestionBtn = document.getElementById('addQuestionBtn');
@@ -409,6 +425,12 @@
         viewStatsBtn.addEventListener('click', () => switchView('stats'));
         viewCouponsBtn.addEventListener('click', () => switchView('coupons'));
         viewQuestionsBtn.addEventListener('click', () => switchView('questions'));
+
+        refreshQuestionsBtn.addEventListener('click', fetchQuestions);
+        refreshFeedbackBtn.addEventListener('click', attemptLogin);
+        refreshStatsBtn.addEventListener('click', renderStats);
+        refreshCouponsBtn.addEventListener('click', fetchCoupons);
+
         addCouponBtn.addEventListener('click', addCoupon);
         addQuestionBtn.addEventListener('click', () => addQuestionRow());
         saveQuestionsBtn.addEventListener('click', saveQuestions);
