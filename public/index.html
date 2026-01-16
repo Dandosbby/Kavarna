@@ -17,41 +17,41 @@
 
     <main class="container">
         <div class="card glass">
-            <h1>Chutnala vám káva?</h1>
-
-            <div class="button-group">
-                <button id="yesBtn" class="btn-yes">ANO</button>
-                <button id="noBtn" class="btn-no">NE</button>
+            <!-- Step 1: Coffee Question -->
+            <div id="mainQuestion">
+                <h1>Chutnala Vám káva? ☕️</h1>
+                <div class="button-group">
+                    <button id="yesBtn" class="btn-yes">ANO</button>
+                    <button id="noBtn" class="btn-no">NE</button>
+                </div>
             </div>
 
-            <!-- Follow-up Question for Negative Feedback -->
+            <!-- Step 2: Reason Question (if Coffee was NE) -->
             <div id="followUpContainer" class="hidden">
-                <p class="follow-up-text">Chcete nám napsat důvod?</p>
-                <div class="button-group">
-                    <button id="reasonYesBtn" class="btn-yes">ANO</button>
-                    <button id="reasonNoBtn" class="btn-no">NE</button>
+                <p class="follow-up-text">Mrzí nás to. 😔 Chcete nám říct proč?</p>
+                <div class="button-group small">
+                    <button id="reasonYesBtn" class="btn-secondary">ANO 🖋️</button>
+                    <button id="reasonNoBtn" class="btn-secondary">NE 🥐</button>
                 </div>
             </div>
 
-            <!-- Text Input for Reason -->
             <div id="reasonInputContainer" class="hidden">
-                <textarea id="reasonText" placeholder="Napište nám, co můžeme zlepšit..." rows="3"></textarea>
-                <button id="submitReasonBtn" class="btn-primary">Odeslat</button>
+                <textarea id="reasonText" placeholder="Co bylo špatně? (nepovinné) 📝" rows="3"></textarea>
+                <button id="submitReasonBtn" class="btn-primary">Pokračovat ☕️</button>
             </div>
 
-            <!-- Service Rating Question -->
+            <!-- Step 3: Service Question -->
             <div id="serviceQuestionContainer" class="hidden">
-                <p class="follow-up-text">Chcete ohodnotit obsluhu?</p>
-                <div class="button-group">
-                    <button id="serviceYesBtn" class="btn-yes">ANO</button>
-                    <button id="serviceNoBtn" class="btn-no">NE</button>
+                <p class="follow-up-text">Chcete ohodnotit dnešní obsluhu? ☕️</p>
+                <div class="button-group small">
+                    <button id="serviceYesBtn" class="btn-secondary">ANO 🖋️</button>
+                    <button id="serviceNoBtn" class="btn-secondary">NE 🍪</button>
                 </div>
             </div>
 
-            <!-- Service Text Input -->
             <div id="serviceInputContainer" class="hidden">
-                <textarea id="serviceText" placeholder="Napište nám svůj názor na obsluhu..." rows="3"></textarea>
-                <button id="submitServiceBtn" class="btn-primary">Odeslat</button>
+                <textarea id="serviceText" placeholder="Vaše poznámka k obsluze... (nepovinné) ✨" rows="3"></textarea>
+                <button id="submitServiceBtn" class="btn-primary">Odeslat ☕️</button>
             </div>
 
             <div id="resultContainer" class="result-container hidden">

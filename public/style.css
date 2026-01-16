@@ -1,16 +1,15 @@
 :root {
     --primary: #8d6e63;
-    /* Brown 400 */
     --secondary: #5d4037;
-    /* Brown 700 */
-    --bg-dark: #3e2723;
-    /* Brown 900 */
-    --text-light: #fff8e1;
-    /* Amber 50 */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --accent: #d7ccc8;
-    /* Brown 100 */
+    --bg-dark: #2C1B18;
+    /* Deep Espresso */
+    --text-light: #F5E6D3;
+    /* Creamy Latte */
+    --accent: #C08261;
+    /* Warm Caramel */
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --cream: #FFF4E0;
 }
 
 * {
@@ -27,255 +26,302 @@ body {
     font-family: 'Outfit', sans-serif;
     background-color: var(--bg-dark);
     color: var(--text-light);
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Subtle Grain Texture Overlay */
+body::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    z-index: 10;
 }
 
 /* Background Animations */
 .background-orbs {
-    position: absolute;
+    position: fixed;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     z-index: -1;
     overflow: hidden;
-    background: radial-gradient(circle at 50% 50%, #4e342e 0%, #3e2723 100%);
+    background: radial-gradient(circle at 50% 50%, #4B3621 0%, #2C1B18 100%);
 }
 
 .orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(60px);
-    opacity: 0.4;
-    animation: float 15s infinite ease-in-out;
+    filter: blur(80px);
+    opacity: 0.3;
+    animation: float 20s infinite ease-in-out;
 }
 
 .orb-1 {
-    width: 500px;
-    height: 500px;
-    background: #a1887f;
-    /* Brown 300 */
-    top: -150px;
-    left: -150px;
+    width: min(80vw, 600px);
+    height: min(80vw, 600px);
+    background: #6D4C41;
+    top: -10%;
+    left: -10%;
 }
 
 .orb-2 {
-    width: 400px;
-    height: 400px;
-    background: #6d4c41;
-    /* Brown 600 */
-    bottom: -100px;
-    right: -100px;
-    animation-delay: -7s;
+    width: min(70vw, 500px);
+    height: min(70vw, 500px);
+    background: #4E342E;
+    bottom: -10%;
+    right: -10%;
+    animation-delay: -10s;
 }
 
 @keyframes float {
 
     0%,
     100% {
-        transform: translate(0, 0);
+        transform: translate(0, 0) scale(1);
     }
 
-    50% {
-        transform: translate(40px, 60px);
+    33% {
+        transform: translate(30px, 50px) scale(1.1);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) scale(0.9);
     }
 }
 
 /* Glass Card */
 .container {
-    padding: 20px;
+    padding: 16px;
     width: 100%;
-    max-width: 480px;
+    max-width: 500px;
+    z-index: 1;
 }
 
 .card.glass {
     background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(25px);
+    -webkit-backdrop-filter: blur(25px);
     border: 1px solid var(--glass-border);
-    border-radius: 30px;
-    padding: 4rem 2rem;
+    border-radius: 32px;
+    padding: clamp(2rem, 8vw, 4rem) clamp(1.5rem, 5vw, 2.5rem);
     text-align: center;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    transition: all 0.4s ease;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .card.compact {
-    padding: 2rem;
-}
-
-.card:hover {
-    transform: translateY(-5px);
+    padding: 2.5rem 1.5rem;
 }
 
 h1 {
     font-weight: 700;
-    font-size: 2.2rem;
-    margin-bottom: 3rem;
+    font-size: clamp(1.8rem, 6vw, 2.5rem);
+    margin-bottom: 2.5rem;
     color: var(--text-light);
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    line-height: 1.2;
+    letter-spacing: -0.5px;
 }
 
 /* Button Group */
 .button-group {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     justify-content: center;
     margin-bottom: 2rem;
 }
 
 button {
     border: none;
-    padding: 16px 40px;
-    border-radius: 50px;
-    font-size: 1.2rem;
+    padding: 16px 32px;
+    border-radius: 20px;
+    font-size: 1.1rem;
     font-weight: 700;
     cursor: pointer;
     font-family: inherit;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-    min-width: 120px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .btn-yes {
-    background: linear-gradient(135deg, #aed581, #7cb342);
-    /* Greenish */
-    color: #1b5e20;
+    background: var(--text-light);
+    color: var(--bg-dark);
 }
 
 .btn-no {
-    background: linear-gradient(135deg, #e57373, #c62828);
-    /* Reddish */
-    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-light);
+    border: 1px solid var(--glass-border);
 }
 
 button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .btn-yes:hover {
-    background: linear-gradient(135deg, #c5e1a5, #8bc34a);
+    background: var(--cream);
+    transform: translateY(-3px) scale(1.02);
 }
 
 .btn-no:hover {
-    background: linear-gradient(135deg, #ef9a9a, #ef5350);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
-
 button:active {
-    transform: scale(0.98);
+    transform: scale(0.96);
+}
+
+/* For Mobile: Stack buttons if space is tight */
+@media (max-width: 400px) {
+    .button-group {
+        flex-direction: column;
+    }
+
+    button {
+        width: 100%;
+    }
 }
 
 .follow-up-text {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-    color: var(--text-dark);
-}
-
-.button-group.small {
-    gap: 15px;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-light);
+    opacity: 0.9;
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, #d7ccc8, #bcaaa4);
-    color: #4e342e;
-    padding: 12px 30px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-light);
+    padding: 12px 24px;
     font-size: 1rem;
-    min-width: 80px;
+    min-width: 100px;
+    border: 1px solid var(--glass-border);
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #aed581, #7cb342);
-    color: #1b5e20;
-    margin-top: 10px;
+    background: var(--accent);
+    color: var(--bg-dark);
+    margin-top: 15px;
+    width: 100%;
 }
 
 textarea {
     width: 100%;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.2);
-    color: var(--text-dark);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-light);
     font-family: inherit;
-    resize: vertical;
-    margin-bottom: 10px;
+    font-size: 1rem;
+    resize: none;
+    margin-bottom: 12px;
     outline: none;
+    transition: border-color 0.3s;
+}
+
+textarea:focus {
+    border-color: var(--accent);
 }
 
 textarea::placeholder {
-    color: rgba(62, 39, 35, 0.6);
-}
-
-#reasonInputContainer {
-    margin-top: 1rem;
+    color: rgba(245, 230, 211, 0.4);
 }
 
 /* Result Area */
 .result-container {
-    margin-top: 0;
     opacity: 0;
-    transform: scale(0.9);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    height: 0;
-    /* height hack to avoid shift before show, but simple opacity is safer. logic handles hidden class */
+    transform: translateY(20px);
+    transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .result-container.show {
     opacity: 1;
-    transform: scale(1);
-    height: auto;
-}
-
-.result-container.hidden {
-    display: none;
+    transform: translateY(0);
 }
 
 #answerText {
-    font-size: 2.2rem;
-    font-weight: 800;
-    margin: 0;
-    line-height: 1.2;
-    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    font-size: clamp(1.5rem, 5vw, 2.2rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.3;
 }
 
 .coupon-container {
-    margin-top: 1.5rem;
-    padding: 1.5rem;
-    border: 2px dashed rgba(255, 255, 255, 0.4);
-    border-radius: 15px;
-    background: rgba(141, 110, 99, 0.2);
-    /* Subtle brown tint */
-    animation: fadeIn 0.5s ease forwards;
+    margin-top: 2rem;
+    padding: 2rem;
+    border: 2px dashed var(--accent);
+    border-radius: 24px;
+    background: rgba(192, 130, 97, 0.1);
+    position: relative;
+    overflow: hidden;
 }
 
 .coupon-label {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.5rem;
-    opacity: 0.8;
+    letter-spacing: 2px;
+    margin-bottom: 0.8rem;
+    color: var(--accent);
+    font-weight: 700;
 }
 
 .coupon-code {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 8vw, 3rem);
     font-weight: 800;
-    letter-spacing: 5px;
-    color: #fff8e1;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    letter-spacing: 4px;
+    color: var(--text-light);
+    font-family: monospace;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
+/* Admin Styles (Scoped if possible, otherwise shared glass) */
+.admin-table-container {
+    max-height: 60vh;
+    overflow-x: auto;
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.2);
+}
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th,
+td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+@media (max-width: 600px) {
+    .card.glass {
+        padding: 2rem 1rem;
     }
 }
