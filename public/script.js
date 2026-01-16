@@ -27,16 +27,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const couponCode = document.getElementById('couponCode');
     const card = document.querySelector('.card.glass');
 
-    // Load questions on start
+    const welcomeScreen = document.getElementById('welcomeScreen');
+    const mainApp = document.getElementById('mainApp');
+
+    // Clicking anywhere on welcome screen starts the app
+    welcomeScreen.addEventListener('click', () => {
+        welcomeScreen.classList.add('hidden');
+        mainApp.classList.remove('hidden');
+        if (questions.length > 0) {
+            renderQuestion();
+        }
+    });
+
+    // Load questions on start (but don't render yet)
     fetch('/api/questions')
         .then(res => res.json())
         .then(data => {
             questions = data;
-            if (questions.length > 0) {
-                renderQuestion();
-            } else {
-                questionText.innerText = "Žádné otázky nejsou k dispozici.";
-            }
+            // Removed automatic renderQuestion call
         })
         .catch(err => {
             console.error('Failed to load questions:', err);
