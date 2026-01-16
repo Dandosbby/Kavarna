@@ -480,14 +480,20 @@
                         &times;
                     </button>
                 </div>
-                <div class="prompts-container ${q.allowNote !== false ? '' : 'hidden'}" style="display: flex; gap: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
-                        <span style="font-size: 0.7rem; color: #81c784; opacity: 0.8; text-transform: uppercase; font-weight: 700;">Výzva po "ANO"</span>
-                        <input type="text" class="yes-prompt" value="${q.yesPrompt || ''}" placeholder="Děkujeme! Jaký je váš postřeh?" style="font-size: 0.9rem;">
+                <div class="prompts-container ${q.allowNote !== false ? '' : 'hidden'}" style="display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div style="display: flex; gap: 15px;">
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                            <span style="font-size: 0.7rem; color: #81c784; opacity: 0.8; text-transform: uppercase; font-weight: 700;">Výzva po "ANO"</span>
+                            <input type="text" class="yes-prompt" value="${q.yesPrompt || ''}" placeholder="Děkujeme! Jaký je váš postřeh?" style="font-size: 0.9rem;">
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 3px;">
+                            <span style="font-size: 0.7rem; color: #e57373; opacity: 0.8; text-transform: uppercase; font-weight: 700;">Výzva po "NE"</span>
+                            <input type="text" class="no-prompt" value="${q.noPrompt || ''}" placeholder="Mrzí nás to. Chcete nám říct víc?" style="font-size: 0.9rem;">
+                        </div>
                     </div>
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
-                        <span style="font-size: 0.7rem; color: #e57373; opacity: 0.8; text-transform: uppercase; font-weight: 700;">Výzva po "NE"</span>
-                        <input type="text" class="no-prompt" value="${q.noPrompt || ''}" placeholder="Mrzí nás to. Chcete nám říct víc?" style="font-size: 0.9rem;">
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                        <span style="font-size: 0.7rem; opacity: 0.5; text-transform: uppercase; font-weight: 700;">Vnitřní nápis pole (Placeholder)</span>
+                        <input type="text" class="placeholder-text" value="${q.placeholder || ''}" placeholder="Vaše zpráva... (nepovinné)" style="font-size: 0.9rem; background: rgba(0,0,0,0.1);">
                     </div>
                 </div>
             `;
@@ -501,7 +507,8 @@
                 text: row.querySelector('.question-text').value,
                 allowNote: row.querySelector('.note-toggle').checked,
                 yesPrompt: row.querySelector('.yes-prompt').value,
-                noPrompt: row.querySelector('.no-prompt').value
+                noPrompt: row.querySelector('.no-prompt').value,
+                placeholder: row.querySelector('.placeholder-text').value
             }));
 
             const password = passwordInput.value;

@@ -84,6 +84,8 @@ document.addEventListener('DOMContentLoaded', () => {
         notePrompt.innerText = choice === 'ANO' ?
             (q.yesPrompt || "Máte pro nás nějaký postřeh? ✨") :
             (q.noPrompt || "Mrzí nás to. 😔 Chcete nám říct proč?");
+
+        noteInput.placeholder = q.placeholder || "Vaše zpráva... (nepovinné)";
     }
 
     submitNoteBtn.addEventListener('click', () => {
