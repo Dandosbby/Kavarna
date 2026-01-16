@@ -194,7 +194,12 @@
                     <span
                         style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; font-weight: 700;">Admin
                         Panel</span>
-                    <h1 style="margin: 0; color: var(--accent); font-size: 1.6rem;">Sodovkárna</h1>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h1 style="margin: 0; color: var(--accent); font-size: 1.6rem;">Sodovkárna</h1>
+                        <button id="fullReloadBtn" class="hidden"
+                            style="background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem;"
+                            title="Restartovat a načíst vše znovu">🔄</button>
+                    </div>
                 </div>
                 <a href="/"
                     style="text-decoration: none; color: var(--text-dark); background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-weight: 500;">&larr;
@@ -417,9 +422,22 @@
         const statsView = document.getElementById('statsView');
         const statsGrid = document.getElementById('statsGrid');
 
+        const fullReloadBtn = document.getElementById('fullReloadBtn');
+
         loginBtn.addEventListener('click', attemptLogin);
         passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin() });
-        logoutBtn.addEventListener('click', () => location.reload());
+        logoutBtn.addEventListener('click', () => {
+            localStorage.removeItem('admin_password');
+            location.reload();
+        });
+        fullReloadBtn.addEventListener('click', () => location.reload());
+
+        // Auto-login check
+        const storedPass = localStorage.getItem('admin_password');
+        if (storedPass) {
+            passwordInput.value = storedPass;
+            attemptLogin(true); // pass true to skip welcome animation
+        }
 
         viewFeedbackBtn.addEventListener('click', () => switchView('feedback'));
         viewStatsBtn.addEventListener('click', () => switchView('stats'));
@@ -662,7 +680,7 @@
             detailModal.classList.remove('show');
         }
 
-        async function attemptLogin() {
+        async function attemptLogin(skipAnimation = false) {
             const password = passwordInput.value;
             errorMsg.style.display = 'none';
             loginBtn.textContent = 'Verifying...';
@@ -676,6 +694,7 @@
                 });
 
                 if (response.ok) {
+                    localStorage.setItem('admin_password', password);
                     const data = await response.json();
                     allData = data;
                     renderTable(data);
@@ -683,17 +702,25 @@
 
                     // Show Welcome State
                     loginState.classList.add('hidden');
-                    const welcomeState = document.getElementById('welcomeState');
-                    welcomeState.classList.remove('hidden');
+                    fullReloadBtn.classList.remove('hidden');
 
-                    // Delay before showing dashboard
-                    setTimeout(() => {
-                        welcomeState.classList.add('hidden');
+                    if (skipAnimation) {
                         dashboardState.classList.remove('hidden');
-                        // Reset to first view
                         switchView('feedback');
-                    }, 2200);
+                    } else {
+                        const welcomeState = document.getElementById('welcomeState');
+                        welcomeState.classList.remove('hidden');
+
+                        // Delay before showing dashboard
+                        setTimeout(() => {
+                            welcomeState.classList.add('hidden');
+                            dashboardState.classList.remove('hidden');
+                            // Reset to first view
+                            switchView('feedback');
+                        }, 2200);
+                    }
                 } else {
+                    localStorage.removeItem('admin_password');
                     const errorData = await response.json();
                     errorMsg.style.display = 'block';
                     errorMsg.textContent = errorData.error || 'Incorrect Password';
