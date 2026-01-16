@@ -51,7 +51,7 @@ async function initDb() {
         try {
             const client = await pool.connect();
             try {
-                await pool.query('SELECT 1');
+                await client.query('SELECT 1');
                 await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT, responses JSONB);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE);`);

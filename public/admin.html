@@ -193,22 +193,46 @@
                     </table>
                 </div>
 
-            </div>
+                <!-- Coupon View -->
+                <div id="couponView" class="admin-table-container hidden">
+                    <div style="margin-bottom: 2rem; display: flex; gap: 10px;">
+                        <input type="text" id="newCouponCode" placeholder="Kód (např. KAVA10)" style="flex: 1;">
+                        <input type="text" id="newCouponValue" placeholder="Hodnota (např. Sleva 10%)" style="flex: 2;">
+                        <button id="addCouponBtn"
+                            style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Přidat</button>
+                    </div>
+                    <table id="couponTable">
+                        <thead>
+                            <tr>
+                                <th>Kód</th>
+                                <th>Hodnota</th>
+                                <th>Stav</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody id="couponTableBody">
+                            <!-- Coupon Rows -->
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Questions View -->
-            <div id="questionsView" class="admin-table-container hidden">
-                <div id="questionsList" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
-                    <!-- Dynamic Question Inputs -->
+                <!-- Questions View -->
+                <div id="questionsView" class="admin-table-container hidden">
+                    <div id="questionsList"
+                        style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                        <!-- Dynamic Question Inputs -->
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="addQuestionBtn"
+                            style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer;">+
+                            Přidat otázku</button>
+                        <button id="saveQuestionsBtn"
+                            style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Uložit
+                            změny</button>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 10px;">
-                    <button id="addQuestionBtn"
-                        style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer;">+
-                        Přidat otázku</button>
-                    <button id="saveQuestionsBtn"
-                        style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Uložit
-                        změny</button>
-                </div>
-            </div>
+
+            </div> <!-- End Dashboard State -->
 
             <button id="logoutBtn"
                 style="margin-top: 20px; background: transparent; border: 1px solid var(--glass-border);">Logout</button>
