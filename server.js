@@ -27,7 +27,7 @@ function writeLocal(file, data) {
 
 // Database Configuration
 let pool = null;
-const isDbConfigured = !!(process.env.DATABASE_URL || process.env.PGHOST);
+const isDbConfigured = !!(process.env.DATABASE_URL || process.env.PGHOST) && process.env.DISABLE_DB !== 'true';
 
 if (isDbConfigured) {
     pool = new Pool({
@@ -36,15 +36,19 @@ if (isDbConfigured) {
     });
 }
 
-// Initialize Database Tables
+// Initialize Database Tables & Validate Connection
 async function initDb() {
     if (!pool) return;
     try {
+        // Test connection
+        await pool.query('SELECT 1');
+
         await pool.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT);`);
         await pool.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
-        console.log('Database tables initialized');
+        console.log('Database connected and tables initialized');
     } catch (err) {
-        console.error('Database init error:', err.message);
+        console.error('Database connection failed. Falling back to local files. Error:', err.message);
+        pool = null; // Disable pool so app uses local fallback
     }
 }
 initDb();
