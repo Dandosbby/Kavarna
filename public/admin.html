@@ -427,7 +427,7 @@
         viewQuestionsBtn.addEventListener('click', () => switchView('questions'));
 
         refreshQuestionsBtn.addEventListener('click', fetchQuestions);
-        refreshFeedbackBtn.addEventListener('click', attemptLogin);
+        refreshFeedbackBtn.addEventListener('click', refreshData);
         refreshStatsBtn.addEventListener('click', renderStats);
         refreshCouponsBtn.addEventListener('click', fetchCoupons);
 
@@ -708,10 +708,42 @@
             }
         }
 
+        async function refreshData() {
+            const password = passwordInput.value;
+            const refreshBtn = document.getElementById('refreshFeedbackBtn');
+            const originalText = refreshBtn.textContent;
+
+            refreshBtn.textContent = '...';
+            refreshBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/admin/data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    allData = data;
+                    renderTable(data);
+                    updateStats(data);
+                } else {
+                    alert('Sezení vypršelo nebo špatné heslo. Zkuste se přihlásit znovu.');
+                    location.reload();
+                }
+            } catch (err) {
+                console.error(err);
+            } finally {
+                refreshBtn.textContent = originalText;
+                refreshBtn.disabled = false;
+            }
+        }
+
         function renderTable(data) {
             tableBody.innerHTML = '';
-            // Show newest first
-            data.slice().reverse().forEach(row => {
+            // Data is already newest first from server
+            data.forEach(row => {
                 const tr = document.createElement('tr');
                 tr.className = 'clickable';
                 const note = row.note ? row.note : '<span style="opacity:0.5">-</span>';
