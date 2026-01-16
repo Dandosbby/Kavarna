@@ -27,6 +27,7 @@ function writeLocal(file, data) {
 
 // Database Configuration
 let pool = null;
+let dbStatus = 'pending'; // pending, connected, failed
 const isDbConfigured = !!(process.env.DATABASE_URL || process.env.PGHOST) && process.env.DISABLE_DB !== 'true';
 
 if (isDbConfigured) {
@@ -34,20 +35,28 @@ if (isDbConfigured) {
         connectionString: process.env.DATABASE_URL || `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`,
         ssl: { rejectUnauthorized: false }
     });
+} else {
+    dbStatus = 'failed';
 }
 
 // Initialize Database Tables & Validate Connection
 async function initDb() {
     if (!pool) return;
     try {
-        // Test connection
-        await pool.query('SELECT 1');
-
-        await pool.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT);`);
-        await pool.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
-        console.log('Database connected and tables initialized');
+        // Test connection with a timeout
+        const client = await pool.connect();
+        try {
+            await client.query('SELECT 1');
+            await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT);`);
+            await client.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
+            dbStatus = 'connected';
+            console.log('Database connected and tables initialized');
+        } finally {
+            client.release();
+        }
     } catch (err) {
         console.error('Database connection failed. Falling back to local files. Error:', err.message);
+        dbStatus = 'failed';
         pool = null; // Disable pool so app uses local fallback
     }
 }
@@ -68,7 +77,7 @@ app.post('/api/feedback', async (req, res) => {
     const feedbackId = Date.now().toString(36) + Math.random().toString(36).substr(2);
 
     try {
-        if (pool) {
+        if (dbStatus === 'connected' && pool) {
             const couponsRes = await pool.query('SELECT * FROM coupons WHERE feedback_id IS NULL');
             if (answer === 'ANO' && Math.random() < 0.01 && couponsRes.rows[0]) {
                 couponCode = couponsRes.rows[0].code;
@@ -110,7 +119,7 @@ function checkAuth(req, res, next) {
 // Admin Endpoint: Get All Data
 app.post('/api/admin/data', checkAuth, async (req, res) => {
     try {
-        if (pool) {
+        if (dbStatus === 'connected' && pool) {
             const result = await pool.query('SELECT * FROM feedback ORDER BY id DESC');
             return res.json(result.rows.map(item => ({ ...item, serviceNote: item.service_note, couponCode: item.coupon_code, couponValue: item.coupon_value })));
         }
@@ -122,7 +131,7 @@ app.post('/api/admin/data', checkAuth, async (req, res) => {
 
 app.post('/api/admin/coupons', checkAuth, async (req, res) => {
     try {
-        if (pool) return res.json((await pool.query('SELECT * FROM coupons')).rows);
+        if (dbStatus === 'connected' && pool) return res.json((await pool.query('SELECT * FROM coupons')).rows);
         res.json(readLocal(couponFile));
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -130,7 +139,7 @@ app.post('/api/admin/coupons', checkAuth, async (req, res) => {
 app.post('/api/admin/coupons/add', async (req, res) => {
     const { code, value } = req.body;
     try {
-        if (pool) {
+        if (dbStatus === 'connected' && pool) {
             await pool.query('INSERT INTO coupons (code, value, used) VALUES ($1, $2, $3)', [code, value || 'Dárek pro Vás', false]);
         } else {
             const coupons = readLocal(couponFile);
@@ -145,7 +154,7 @@ app.post('/api/admin/coupons/add', async (req, res) => {
 app.delete('/api/admin/coupons/:code', async (req, res) => {
     const { code } = req.params;
     try {
-        if (pool) {
+        if (dbStatus === 'connected' && pool) {
             const check = await pool.query('SELECT feedback_id FROM coupons WHERE code = $1', [code]);
             if (check.rows[0]?.feedback_id) return res.status(400).json({ error: 'Issued' });
             await pool.query('DELETE FROM coupons WHERE code = $1', [code]);
@@ -161,7 +170,7 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
 app.post('/api/admin/coupons/:code/toggle', async (req, res) => {
     const { code } = req.params;
     try {
-        if (pool) {
+        if (dbStatus === 'connected' && pool) {
             const result = await pool.query('UPDATE coupons SET used = NOT used WHERE code = $1 RETURNING used', [code]);
             return res.json({ success: true, used: result.rows[0].used });
         }
@@ -176,7 +185,7 @@ app.post('/api/admin/coupons/:code/toggle', async (req, res) => {
 app.delete('/api/admin/data/:id', checkAuth, async (req, res) => {
     const { id } = req.params;
     try {
-        if (pool) await pool.query('DELETE FROM feedback WHERE id = $1', [id]);
+        if (dbStatus === 'connected' && pool) await pool.query('DELETE FROM feedback WHERE id = $1', [id]);
         else writeLocal(dataFile, readLocal(dataFile).filter(l => l.id !== id));
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
