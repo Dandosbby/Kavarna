@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const noBtn = document.getElementById('noBtn');
     const starRating = document.getElementById('starRating');
     const stars = starRating.querySelectorAll('span');
+    const submitStarsBtn = document.getElementById('submitStarsBtn');
+    let selectedStars = 0;
 
     const noteContainer = document.getElementById('noteContainer');
     const notePrompt = document.getElementById('notePrompt');
@@ -72,23 +74,34 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function resetStars() {
+        selectedStars = 0;
         stars.forEach(s => {
             s.style.opacity = '0.3';
             s.style.transform = 'scale(1)';
         });
+        submitStarsBtn.style.opacity = '0.5';
+        submitStarsBtn.style.pointerEvents = 'none';
     }
 
     stars.forEach(star => {
         star.addEventListener('click', () => {
-            const val = star.dataset.star;
+            selectedStars = star.dataset.star;
             // Visual feedback
             stars.forEach(s => {
-                s.style.opacity = s.dataset.star <= val ? '1' : '0.3';
-                s.style.transform = s.dataset.star <= val ? 'scale(1.2)' : 'scale(1)';
+                s.style.opacity = s.dataset.star <= selectedStars ? '1' : '0.3';
+                s.style.transform = s.dataset.star <= selectedStars ? 'scale(1.2)' : 'scale(1)';
             });
 
-            setTimeout(() => handleChoice(val), 400);
+            // Enable submit button
+            submitStarsBtn.style.opacity = '1';
+            submitStarsBtn.style.pointerEvents = 'auto';
         });
+    });
+
+    submitStarsBtn.addEventListener('click', () => {
+        if (selectedStars > 0) {
+            handleChoice(selectedStars);
+        }
     });
 
     yesBtn.addEventListener('click', () => handleChoice('ANO'));
