@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oracle of Yes/No</title>
+    <title>Kavárna - Zpětná vazba</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
 </head>
@@ -17,45 +17,24 @@
 
     <main class="container">
         <div class="card glass">
-            <!-- Step 1: Coffee Question -->
-            <div id="mainQuestion">
-                <h1>Chutnala Vám káva? ☕️</h1>
-                <div class="button-group">
+            <!-- Dynamic Questions Container -->
+            <div id="questionStep">
+                <h1 id="questionText">Načítání...</h1>
+                <div id="yesNoButtons" class="button-group">
                     <button id="yesBtn" class="btn-yes">ANO</button>
                     <button id="noBtn" class="btn-no">NE</button>
                 </div>
-            </div>
 
-            <!-- Step 2: Reason Question (if Coffee was NE) -->
-            <div id="followUpContainer" class="hidden">
-                <p class="follow-up-text">Mrzí nás to. 😔 Chcete nám říct proč?</p>
-                <div class="button-group small">
-                    <button id="reasonYesBtn" class="btn-secondary">ANO 🖋️</button>
-                    <button id="reasonNoBtn" class="btn-secondary">NE 🥐</button>
+                <div id="noteContainer" class="hidden">
+                    <p id="notePrompt" class="follow-up-text"></p>
+                    <textarea id="noteInput" placeholder="Vaše zpráva... (nepovinné)" rows="3"></textarea>
+                    <button id="submitNoteBtn" class="btn-primary">Pokračovat ☕️</button>
                 </div>
             </div>
 
-            <div id="reasonInputContainer" class="hidden">
-                <textarea id="reasonText" placeholder="Co bylo špatně? (nepovinné) 📝" rows="3"></textarea>
-                <button id="submitReasonBtn" class="btn-primary">Pokračovat ☕️</button>
-            </div>
-
-            <!-- Step 3: Service Question -->
-            <div id="serviceQuestionContainer" class="hidden">
-                <p class="follow-up-text">Chcete ohodnotit dnešní obsluhu? ☕️</p>
-                <div class="button-group small">
-                    <button id="serviceYesBtn" class="btn-secondary">ANO 🖋️</button>
-                    <button id="serviceNoBtn" class="btn-secondary">NE 🍪</button>
-                </div>
-            </div>
-
-            <div id="serviceInputContainer" class="hidden">
-                <textarea id="serviceText" placeholder="Vaše poznámka k obsluze... (nepovinné) ✨" rows="3"></textarea>
-                <button id="submitServiceBtn" class="btn-primary">Odeslat ☕️</button>
-            </div>
-
+            <!-- Result Area -->
             <div id="resultContainer" class="result-container hidden">
-                <h2 id="answerText"></h2>
+                <h2 id="answerText">Děkujeme!</h2>
                 <div id="couponContainer" class="coupon-container hidden">
                     <p class="coupon-label" id="couponValueLabel">Váš kupón:</p>
                     <div id="couponCode" class="coupon-code"></div>

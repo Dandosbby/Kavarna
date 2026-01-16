@@ -169,6 +169,9 @@
                     <button id="viewCouponsBtn" class="nav-btn"
                         style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Správa
                         kupónů</button>
+                    <button id="viewQuestionsBtn" class="nav-btn"
+                        style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Nastavení
+                        questions</button>
                 </div>
 
                 <!-- Feedback View -->
@@ -190,32 +193,26 @@
                     </table>
                 </div>
 
-                <!-- Coupon View -->
-                <div id="couponView" class="admin-table-container hidden">
-                    <div style="margin-bottom: 2rem; display: flex; gap: 10px;">
-                        <input type="text" id="newCouponCode" placeholder="Kód (např. KAVA10)" style="flex: 1;">
-                        <input type="text" id="newCouponValue" placeholder="Hodnota (např. Sleva 10%)" style="flex: 2;">
-                        <button id="addCouponBtn"
-                            style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Přidat</button>
-                    </div>
-                    <table id="couponTable">
-                        <thead>
-                            <tr>
-                                <th>Kód</th>
-                                <th>Hodnota</th>
-                                <th>Stav</th>
-                                <th>Akce</th>
-                            </tr>
-                        </thead>
-                        <tbody id="couponTableBody">
-                            <!-- Coupon Rows -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <button id="logoutBtn"
-                    style="margin-top: 20px; background: transparent; border: 1px solid var(--glass-border);">Logout</button>
             </div>
+
+            <!-- Questions View -->
+            <div id="questionsView" class="admin-table-container hidden">
+                <div id="questionsList" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem;">
+                    <!-- Dynamic Question Inputs -->
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="addQuestionBtn"
+                        style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer;">+
+                        Přidat otázku</button>
+                    <button id="saveQuestionsBtn"
+                        style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Uložit
+                        změny</button>
+                </div>
+            </div>
+
+            <button id="logoutBtn"
+                style="margin-top: 20px; background: transparent; border: 1px solid var(--glass-border);">Logout</button>
+        </div>
         </div>
     </main>
 
@@ -266,6 +263,12 @@
         const couponView = document.getElementById('couponView');
         const viewFeedbackBtn = document.getElementById('viewFeedbackBtn');
         const viewCouponsBtn = document.getElementById('viewCouponsBtn');
+        const viewQuestionsBtn = document.getElementById('viewQuestionsBtn');
+        const questionsView = document.getElementById('questionsView');
+        const questionsList = document.getElementById('questionsList');
+        const addQuestionBtn = document.getElementById('addQuestionBtn');
+        const saveQuestionsBtn = document.getElementById('saveQuestionsBtn');
+
         const newCouponCode = document.getElementById('newCouponCode');
         const newCouponValue = document.getElementById('newCouponValue');
         const addCouponBtn = document.getElementById('addCouponBtn');
@@ -291,25 +294,22 @@
 
         viewFeedbackBtn.addEventListener('click', () => switchView('feedback'));
         viewCouponsBtn.addEventListener('click', () => switchView('coupons'));
+        viewQuestionsBtn.addEventListener('click', () => switchView('questions'));
         addCouponBtn.addEventListener('click', addCoupon);
+        addQuestionBtn.addEventListener('click', () => addQuestionRow());
+        saveQuestionsBtn.addEventListener('click', saveQuestions);
 
         function switchView(view) {
-            if (view === 'feedback') {
-                feedbackView.classList.remove('hidden');
-                couponView.classList.add('hidden');
-                viewFeedbackBtn.classList.add('active');
-                viewFeedbackBtn.style.background = 'rgba(255,255,255,0.1)';
-                viewCouponsBtn.classList.remove('active');
-                viewCouponsBtn.style.background = 'transparent';
-            } else {
-                feedbackView.classList.add('hidden');
-                couponView.classList.remove('hidden');
-                viewCouponsBtn.classList.add('active');
-                viewCouponsBtn.style.background = 'rgba(255,255,255,0.1)';
-                viewFeedbackBtn.classList.remove('active');
-                viewFeedbackBtn.style.background = 'transparent';
-                fetchCoupons();
-            }
+            feedbackView.classList.toggle('hidden', view !== 'feedback');
+            couponView.classList.toggle('hidden', view !== 'coupons');
+            questionsView.classList.toggle('hidden', view !== 'questions');
+
+            viewFeedbackBtn.style.background = view === 'feedback' ? 'rgba(255,255,255,0.1)' : 'transparent';
+            viewCouponsBtn.style.background = view === 'coupons' ? 'rgba(255,255,255,0.1)' : 'transparent';
+            viewQuestionsBtn.style.background = view === 'questions' ? 'rgba(255,255,255,0.1)' : 'transparent';
+
+            if (view === 'coupons') fetchCoupons();
+            if (view === 'questions') fetchQuestions();
         }
 
         async function fetchCoupons() {
@@ -327,6 +327,61 @@
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        async function fetchQuestions() {
+            try {
+                const response = await fetch('/api/questions');
+                if (response.ok) {
+                    const questions = await response.json();
+                    renderQuestions(questions);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function renderQuestions(questions) {
+            questionsList.innerHTML = '';
+            questions.forEach(q => addQuestionRow(q));
+        }
+
+        function addQuestionRow(q = { id: Date.now().toString(), text: '', allowNote: true }) {
+            const div = document.createElement('div');
+            div.style.display = 'flex';
+            div.style.alignItems = 'center';
+            div.style.gap = '10px';
+            div.className = 'question-row';
+            div.dataset.id = q.id;
+            div.innerHTML = `
+                <input type="text" value="${q.text}" style="flex: 1;" placeholder="Text otázky">
+                <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;">
+                    <input type="checkbox" ${q.allowNote !== false ? 'checked' : ''} class="note-toggle"> Poznámka?
+                </label>
+                <button onclick="this.parentElement.remove()" style="background: #e57373; color: white; border: none; border-radius: 10px; width: 40px; height: 40px; cursor: pointer;">&times;</button>
+            `;
+            questionsList.appendChild(div);
+        }
+
+        async function saveQuestions() {
+            const rows = document.querySelectorAll('.question-row');
+            const questions = Array.from(rows).map(row => ({
+                id: row.dataset.id,
+                text: row.querySelector('input[type="text"]').value,
+                allowNote: row.querySelector('.note-toggle').checked
+            }));
+
+            const password = passwordInput.value;
+            try {
+                const response = await fetch('/api/admin/questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password, questions })
+                });
+                if (response.ok) {
+                    alert('Questions saved successfully!');
+                } else {
+                    alert('Failed to save questions');
+                }
+            } catch (e) { console.error(e); }
         }
 
         closeModal.addEventListener('click', hideModal);

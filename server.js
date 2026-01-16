@@ -14,6 +14,7 @@ const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 const dataFile = path.join(dataDir, 'answers.json');
 const couponFile = path.join(dataDir, 'coupons.json');
+const questionFile = path.join(dataDir, 'questions.json');
 
 // Helper to read/write local files
 function readLocal(file) {
@@ -50,9 +51,10 @@ async function initDb() {
         try {
             const client = await pool.connect();
             try {
-                await client.query('SELECT 1');
-                await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT);`);
+                await pool.query('SELECT 1');
+                await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT, responses JSONB);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
+                await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE);`);
                 console.log('PostgreSQL tables initialized');
             } finally {
                 client.release();
@@ -91,8 +93,8 @@ async function saveFeedback(entry) {
         feedbacks.push(entry);
         await kv.set('feedbacks', feedbacks);
     } else if (dbType === 'pg') {
-        await pool.query('INSERT INTO feedback (id, date, time, answer, note, service_note, coupon_code, coupon_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [entry.id, entry.date, entry.time, entry.answer, entry.note || '', entry.serviceNote || '', entry.couponCode, entry.couponValue]);
+        await pool.query('INSERT INTO feedback (id, date, time, answer, note, service_note, coupon_code, coupon_value, responses) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            [entry.id, entry.date, entry.time, entry.answer || '', entry.note || '', entry.serviceNote || '', entry.couponCode, entry.couponValue, JSON.stringify(entry.responses || {})]);
     } else {
         const feedbacks = readLocal(dataFile);
         feedbacks.push(entry);
@@ -109,8 +111,35 @@ async function getCoupons() {
 async function saveCoupons(coupons) {
     if (dbType === 'kv') await kv.set('coupons', coupons);
     else if (dbType === 'pg') {
-        // PG uses individual row management, this wrapper is more for list-based KV/Local
+        // PG uses individual row management
     } else writeLocal(couponFile, coupons);
+}
+
+const defaultQuestions = [
+    { id: 'q1', text: 'Chutnala Vám káva? ☕️', allowNote: true },
+    { id: 'q2', text: 'Chcete ohodnotit dnešní obsluhu? ☕️', allowNote: true }
+];
+
+async function getQuestions() {
+    if (dbType === 'kv') return (await kv.get('questions')) || defaultQuestions;
+    if (dbType === 'pg') {
+        try {
+            const res = await pool.query('SELECT * FROM questions ORDER BY order_index ASC');
+            return res.rows.length > 0 ? res.rows.map(q => ({ ...q, allowNote: q.allow_note })) : defaultQuestions;
+        } catch (e) { return defaultQuestions; }
+    }
+    const local = readLocal(questionFile);
+    return local.length > 0 ? local : defaultQuestions;
+}
+
+async function saveQuestions(questions) {
+    if (dbType === 'kv') await kv.set('questions', questions);
+    else if (dbType === 'pg') {
+        await pool.query('DELETE FROM questions');
+        for (let i = 0; i < questions.length; i++) {
+            await pool.query('INSERT INTO questions (id, text, order_index, allow_note) VALUES ($1, $2, $3, $4)', [questions[i].id, questions[i].text, i, !!questions[i].allowNote]);
+        }
+    } else writeLocal(questionFile, questions);
 }
 
 // Endpoint to Save Feedback
@@ -160,6 +189,19 @@ app.post('/api/admin/data', checkAuth, async (req, res) => {
     try {
         const data = await getFeedbacks();
         res.json(dbType === 'local' || dbType === 'kv' ? [...data].reverse() : data);
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/questions', async (req, res) => {
+    try { res.json(await getQuestions()); } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/questions', checkAuth, async (req, res) => {
+    try {
+        const { questions } = req.body;
+        if (!Array.isArray(questions)) return res.status(400).json({ error: 'Questions must be an array' });
+        await saveQuestions(questions);
+        res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

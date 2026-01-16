@@ -1,28 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // State to hold feedback data
-    let currentFeedback = {
-        answer: null,
+    let questions = [];
+    let currentStep = 0;
+    let responses = {};
+    let finalPayload = {
+        answer: null, // For backward compatibility with simpler UI
         note: null,
-        serviceNote: null
+        serviceNote: null,
+        responses: {}
     };
 
     // DOM Elements
+    const questionStep = document.getElementById('questionStep');
+    const questionText = document.getElementById('questionText');
+    const yesNoButtons = document.getElementById('yesNoButtons');
     const yesBtn = document.getElementById('yesBtn');
     const noBtn = document.getElementById('noBtn');
-    const followUpContainer = document.getElementById('followUpContainer');
-    const reasonYesBtn = document.getElementById('reasonYesBtn');
-    const reasonNoBtn = document.getElementById('reasonNoBtn');
-    const reasonInputContainer = document.getElementById('reasonInputContainer');
-    const reasonText = document.getElementById('reasonText');
-    const submitReasonBtn = document.getElementById('submitReasonBtn');
 
-    // New DOM Elements
-    const serviceQuestionContainer = document.getElementById('serviceQuestionContainer');
-    const serviceYesBtn = document.getElementById('serviceYesBtn');
-    const serviceNoBtn = document.getElementById('serviceNoBtn');
-    const serviceInputContainer = document.getElementById('serviceInputContainer');
-    const serviceText = document.getElementById('serviceText');
-    const submitServiceBtn = document.getElementById('submitServiceBtn');
+    const noteContainer = document.getElementById('noteContainer');
+    const notePrompt = document.getElementById('notePrompt');
+    const noteInput = document.getElementById('noteInput');
+    const submitNoteBtn = document.getElementById('submitNoteBtn');
 
     const resultContainer = document.getElementById('resultContainer');
     const answerText = document.getElementById('answerText');
@@ -30,139 +27,114 @@ document.addEventListener('DOMContentLoaded', () => {
     const couponCode = document.getElementById('couponCode');
     const card = document.querySelector('.card.glass');
 
-    // --- Step 1: Coffee Question ---
-    yesBtn.addEventListener('click', () => {
-        currentFeedback = { answer: 'ANO', note: null, serviceNote: null }; // Reset state
-        hideMainButtons();
-        showServiceQuestion(); // Skip reason, go to Service
-    });
+    // Load questions on start
+    fetch('/api/questions')
+        .then(res => res.json())
+        .then(data => {
+            questions = data;
+            if (questions.length > 0) {
+                renderQuestion();
+            } else {
+                questionText.innerText = "Žádné otázky nejsou k dispozici.";
+            }
+        })
+        .catch(err => {
+            console.error('Failed to load questions:', err);
+            questionText.innerText = "Chyba při načítání.";
+        });
 
-    noBtn.addEventListener('click', () => {
-        currentFeedback = { answer: 'NE', note: null, serviceNote: null }; // Reset state
-        hideMainButtons();
-        followUpContainer.classList.remove('hidden'); // Show Reason Question
-    });
-
-    // --- Step 2: Reason Question (if Coffee was NE) ---
-    reasonYesBtn.addEventListener('click', () => {
-        followUpContainer.classList.add('hidden');
-        reasonInputContainer.classList.remove('hidden');
-    });
-
-    reasonNoBtn.addEventListener('click', () => {
-        followUpContainer.classList.add('hidden');
-        submitFeedback(); // End flow with thank you message
-    });
-
-    submitReasonBtn.addEventListener('click', () => {
-        const note = reasonText.value.trim();
-        if (note) {
-            currentFeedback.note = note;
-        }
-        reasonInputContainer.classList.add('hidden');
-        showServiceQuestion(); // Go to Service
-    });
-
-    // --- Step 3: Service Question ---
-    function showServiceQuestion() {
-        serviceQuestionContainer.classList.remove('hidden');
+    function renderQuestion() {
+        const q = questions[currentStep];
+        questionText.classList.remove('hidden');
+        questionText.innerText = q.text;
+        yesNoButtons.classList.remove('hidden');
+        noteContainer.classList.add('hidden');
+        noteInput.value = '';
     }
 
-    serviceYesBtn.addEventListener('click', () => {
-        serviceQuestionContainer.classList.add('hidden');
-        serviceInputContainer.classList.remove('hidden');
-    });
+    yesBtn.addEventListener('click', () => handleChoice('ANO'));
+    noBtn.addEventListener('click', () => handleChoice('NE'));
 
-    serviceNoBtn.addEventListener('click', () => {
-        // User doesn't want to rate service -> SUBMIT ALL
-        serviceQuestionContainer.classList.add('hidden');
-        submitFeedback();
-    });
+    function handleChoice(choice) {
+        const q = questions[currentStep];
+        responses[q.id] = { answer: choice, note: "" };
 
-    submitServiceBtn.addEventListener('click', () => {
-        const note = serviceText.value.trim();
-        if (note) {
-            currentFeedback.serviceNote = note;
+        // Backward compatibility mapping for first two questions
+        if (currentStep === 0) finalPayload.answer = choice;
+
+        if (q.allowNote) {
+            showNoteInput(choice);
+        } else {
+            nextStep();
         }
-        serviceInputContainer.classList.add('hidden');
-        submitFeedback();
-    });
-
-    // --- Helper to Hide Main Buttons ---
-    function hideMainButtons() {
-        yesBtn.parentElement.classList.add('hidden');
-        document.querySelector('h1').classList.add('hidden');
     }
 
-    // --- Final Submission ---
-    function submitFeedback() {
+    function showNoteInput(choice) {
+        yesNoButtons.classList.add('hidden');
+        noteContainer.classList.remove('hidden');
+        notePrompt.innerText = choice === 'NE' ? "Mrzí nás to. 😔 Chcete nám říct proč?" : "Máte pro nás nějaký postřeh? ✨";
+    }
+
+    submitNoteBtn.addEventListener('click', () => {
+        const q = questions[currentStep];
+        const note = noteInput.value.trim();
+        responses[q.id].note = note;
+
+        // Backward compatibility mapping
+        if (currentStep === 0) finalPayload.note = note;
+        if (currentStep === 1) finalPayload.serviceNote = note;
+
+        nextStep();
+    });
+
+    function nextStep() {
+        currentStep++;
+        if (currentStep < questions.length) {
+            renderQuestion();
+        } else {
+            submitAll();
+        }
+    }
+
+    function submitAll() {
+        questionStep.classList.add('hidden');
+        finalPayload.responses = responses;
+
         fetch('/api/feedback', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(currentFeedback),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finalPayload)
         })
-            .then(response => response.json())
+            .then(res => res.json())
             .then(data => {
                 if (data.success) {
                     showThankYou(data.couponCode, data.couponValue);
                 } else {
                     alert('Chyba při odesílání.');
-                    resetApp();
+                    location.reload();
                 }
             })
-            .catch((error) => {
-                console.error('Error:', error);
+            .catch(err => {
+                console.error(err);
                 alert('Chyba při odesílání.');
-                resetApp();
+                location.reload();
             });
     }
 
-    function showThankYou(serverCouponCode, serverCouponValue) {
-        // Hide all potential previous containers
-        [followUpContainer, reasonInputContainer, serviceQuestionContainer, serviceInputContainer].forEach(el => el.classList.add('hidden'));
-
+    function showThankYou(code, val) {
         card.classList.add('compact');
         resultContainer.classList.remove('hidden');
         resultContainer.classList.add('show');
-        answerText.innerText = "Děkujeme za zpětnou vazbu a hezký den";
 
-        // Display coupon if provided by server
-        if (serverCouponCode) {
-            const couponValueLabel = document.getElementById('couponValueLabel');
-            couponCode.innerText = serverCouponCode;
-            if (serverCouponValue) {
-                couponValueLabel.innerText = serverCouponValue + ":";
-            }
+        if (code) {
+            const label = document.getElementById('couponValueLabel');
+            couponCode.innerText = code;
+            if (val) label.innerText = val + ":";
             couponContainer.classList.remove('hidden');
-        } else {
-            couponContainer.classList.add('hidden');
         }
 
-        // Increased timeout to 8 seconds to give more time to read/screenshot
         setTimeout(() => {
-            resetApp();
-        }, 8000);
-    }
-
-    function resetApp() {
-        // Reset UI
-        card.classList.remove('compact');
-        resultContainer.classList.remove('show');
-        resultContainer.classList.add('hidden');
-        couponContainer.classList.add('hidden');
-        followUpContainer.classList.add('hidden');
-        reasonInputContainer.classList.add('hidden');
-        serviceQuestionContainer.classList.add('hidden');
-        serviceInputContainer.classList.add('hidden');
-
-        // Clear Inputs
-        reasonText.value = '';
-        serviceText.value = '';
-
-        // Show Main
-        yesBtn.parentElement.classList.remove('hidden');
-        document.querySelector('h1').classList.remove('hidden');
+            location.reload();
+        }, 10000);
     }
 });
