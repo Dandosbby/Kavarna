@@ -263,10 +263,14 @@ app.delete('/api/admin/data/:id', checkAuth, async (req, res) => {
     const { id } = req.params;
     try {
         if (dbType === 'pg') await pool.query('DELETE FROM feedback WHERE id = $1', [id]);
-        else {
+        else if (dbType === 'kv') {
             let data = await getFeedbacks();
             data = data.filter(l => l.id !== id);
-            await kv.set('feedbacks', data); // Since KV/Local use list strategy
+            await kv.set('feedbacks', data);
+        } else {
+            let data = readLocal(dataFile);
+            data = data.filter(l => l.id !== id);
+            writeLocal(dataFile, data);
         }
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }

@@ -692,8 +692,10 @@
             try {
                 const response = await fetch('/api/admin/data/mock', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-password': password
+                    }
                 });
                 if (response.ok) attemptLogin();
             } catch (e) { console.error(e); }
@@ -705,10 +707,10 @@
             try {
                 const response = await fetch('/api/admin/data/all', {
                     method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password })
+                    headers: { 'x-admin-password': password }
                 });
                 if (response.ok) attemptLogin();
+                else alert('Chyba při mazání.');
             } catch (e) { console.error(e); }
         }
     </script>
