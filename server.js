@@ -68,7 +68,11 @@ app.post('/api/feedback', (req, res) => {
     if (couponCode) {
         const coupon = coupons.find(c => c.code === couponCode);
         if (coupon) coupon.feedbackId = feedbackId;
-        fs.writeFileSync(couponFile, JSON.stringify(coupons, null, 2));
+        try {
+            fs.writeFileSync(couponFile, JSON.stringify(coupons, null, 2));
+        } catch (e) {
+            console.error('Failed to write coupon file (expected on Vercel):', e.message);
+        }
     }
 
     const entry = {
@@ -85,7 +89,11 @@ app.post('/api/feedback', (req, res) => {
     };
 
     currentData.push(entry);
-    fs.writeFileSync(dataFile, JSON.stringify(currentData, null, 2));
+    try {
+        fs.writeFileSync(dataFile, JSON.stringify(currentData, null, 2));
+    } catch (e) {
+        console.error('Failed to write data file (expected on Vercel):', e.message);
+    }
 
     res.json({ success: true, couponCode: couponCode, couponValue: couponValue });
 });

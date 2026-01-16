@@ -120,6 +120,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showThankYou(serverCouponCode, serverCouponValue) {
+        // Hide all potential previous containers
+        [followUpContainer, reasonInputContainer, serviceQuestionContainer, serviceInputContainer].forEach(el => el.classList.add('hidden'));
+
         card.classList.add('compact');
         resultContainer.classList.remove('hidden');
         resultContainer.classList.add('show');
@@ -137,9 +140,10 @@ document.addEventListener('DOMContentLoaded', () => {
             couponContainer.classList.add('hidden');
         }
 
+        // Increased timeout to 8 seconds to give more time to read/screenshot
         setTimeout(() => {
             resetApp();
-        }, 5000);
+        }, 8000);
     }
 
     function resetApp() {
