@@ -259,6 +259,32 @@ app.post('/api/admin/coupons/:code/toggle', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.delete('/api/admin/data/all', checkAuth, async (req, res) => {
+    try {
+        if (dbType === 'pg') await pool.query('DELETE FROM feedback');
+        else if (dbType === 'kv') await kv.set('feedbacks', []);
+        else writeLocal(dataFile, []);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/admin/data/batch/20', checkAuth, async (req, res) => {
+    try {
+        if (dbType === 'pg') {
+            await pool.query('DELETE FROM feedback WHERE id IN (SELECT id FROM feedback ORDER BY id DESC LIMIT 20)');
+        } else if (dbType === 'kv') {
+            let data = await getFeedbacks();
+            data.splice(0, 20); // Remove first 20 (since we reverse for display, or just newest)
+            await kv.set('feedbacks', data);
+        } else {
+            let data = readLocal(dataFile);
+            data.splice(data.length - 20, 20); // Remove last 20 from local file
+            writeLocal(dataFile, data);
+        }
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.delete('/api/admin/data/:id', checkAuth, async (req, res) => {
     const { id } = req.params;
     try {
@@ -272,15 +298,6 @@ app.delete('/api/admin/data/:id', checkAuth, async (req, res) => {
             data = data.filter(l => l.id !== id);
             writeLocal(dataFile, data);
         }
-        res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/admin/data/all', checkAuth, async (req, res) => {
-    try {
-        if (dbType === 'pg') await pool.query('DELETE FROM feedback');
-        else if (dbType === 'kv') await kv.set('feedbacks', []);
-        else writeLocal(dataFile, []);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });

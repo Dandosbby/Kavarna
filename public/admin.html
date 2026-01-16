@@ -205,13 +205,16 @@
 
                 <!-- Feedback View -->
                 <div id="feedbackView" class="admin-table-container">
-                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
                         <button id="mockDataBtn"
                             style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🧪
                             Generovat 20 odpovědí</button>
+                        <button id="delete20Btn"
+                            style="background: rgba(229, 115, 115, 0.05); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.1); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🗑️
+                            Smazat 20 odpovědí</button>
                         <button id="deleteAllBtn"
-                            style="background: rgba(229, 115, 115, 0.1); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.2); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🗑️
-                            Smazat vše</button>
+                            style="background: rgba(229, 115, 115, 0.1); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.2); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🔥🔥
+                            Smazat ÚPLNĚ VŠE</button>
                     </div>
                     <table id="dataTable">
                         <thead>
@@ -361,6 +364,7 @@
         saveQuestionsBtn.addEventListener('click', saveQuestions);
 
         document.getElementById('mockDataBtn').addEventListener('click', generateMockData);
+        document.getElementById('delete20Btn').addEventListener('click', delete20Feedback);
         document.getElementById('deleteAllBtn').addEventListener('click', deleteAllFeedback);
 
         function switchView(view) {
@@ -698,6 +702,19 @@
                     }
                 });
                 if (response.ok) attemptLogin();
+            } catch (e) { console.error(e); }
+        }
+
+        async function delete20Feedback() {
+            if (!confirm('Opravdu chcete smazat posledních 20 odpovědí?')) return;
+            const password = passwordInput.value;
+            try {
+                const response = await fetch('/api/admin/data/batch/20', {
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': password }
+                });
+                if (response.ok) attemptLogin();
+                else alert('Chyba při mazání.');
             } catch (e) { console.error(e); }
         }
 
