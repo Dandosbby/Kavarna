@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - Kavárna</title>
+    <title>Sodovkárna - Admin Panel</title>
     <link rel="stylesheet" href="style.css"> <!-- Reuse glass styles -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
     <style>
@@ -188,15 +188,21 @@
 
     <main class="container" style="max-width: 800px;">
         <div class="card glass">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h1>Admin Panel</h1>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                <div>
+                    <span
+                        style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.6; font-weight: 700;">Admin
+                        Panel</span>
+                    <h1 style="margin: 0; color: var(--accent); font-size: 1.6rem;">Sodovkárna</h1>
+                </div>
                 <a href="/"
                     style="text-decoration: none; color: var(--text-dark); background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-weight: 500;">&larr;
-                    Back to App</a>
+                    Zpět do aplikace</a>
             </div>
 
             <!-- Login State -->
-            <div id="loginState" class="admin-login">
+            <div id="loginState" class="admin-login" style="text-align: center;">
+                <h3 style="margin-bottom: 20px; opacity: 0.8;">Přihlášení - Sodovkárna</h3>
                 <input type="password" id="passwordInput" placeholder="Heslo" />
                 <button id="loginBtn">Přihlásit se</button>
                 <div id="errorMsg" class="error">Nesprávné heslo</div>

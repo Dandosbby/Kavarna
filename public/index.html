@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kavárna - Zpětná vazba</title>
+    <title>Sodovkárna - Coffee Feedback</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
 </head>
@@ -16,33 +16,39 @@
     </div>
 
     <main class="container">
-        <div class="card glass">
-            <!-- Dynamic Questions Container -->
-            <div id="questionStep">
-                <h1 id="questionText">Načítání...</h1>
-                <div id="yesNoButtons" class="button-group">
-                    <button id="yesBtn" class="btn-yes">ANO</button>
-                    <button id="noBtn" class="btn-no">NE</button>
-                </div>
+        <div style="text-align: center; margin-bottom: 20px;">
+            <span
+                style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 3px; opacity: 0.5; font-weight: 700;">Vítejte
+                v</span>
+            <h2 style="margin: 0; color: var(--accent); font-size: 1.8rem; letter-spacing: 1px;">Sodovkárna</h2>
+        </div>
 
-                <div id="noteContainer" class="hidden">
-                    <p id="notePrompt" class="follow-up-text"></p>
-                    <textarea id="noteInput" placeholder="Vaše zpráva... (nepovinné)" rows="3"></textarea>
-                    <button id="submitNoteBtn" class="btn-primary">Pokračovat ☕️</button>
-                </div>
+        <!-- Dynamic Questions Container -->
+        <div id="questionStep">
+            <h1 id="questionText" style="margin-top: 10px;">Načítání...</h1>
+            <div id="yesNoButtons" class="button-group">
+                <button id="yesBtn" class="btn-yes">ANO</button>
+                <button id="noBtn" class="btn-no">NE</button>
             </div>
 
-            <!-- Result Area -->
-            <div id="resultContainer" class="result-container hidden">
-                <h2 id="answerText">Děkujeme!</h2>
-                <div id="couponContainer" class="coupon-container hidden">
-                    <p class="coupon-label" id="couponValueLabel">Váš kupón:</p>
-                    <div id="couponCode" class="coupon-code"></div>
-                    <p class="screenshot-info"
-                        style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px; color: var(--accent);">📸 Vyfoťte si
-                        tuto obrazovku pro uplatnění kupónu!</p>
-                </div>
+            <div id="noteContainer" class="hidden">
+                <p id="notePrompt" class="follow-up-text"></p>
+                <textarea id="noteInput" placeholder="Vaše zpráva... (nepovinné)" rows="3"></textarea>
+                <button id="submitNoteBtn" class="btn-primary">Pokračovat ☕️</button>
             </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="resultContainer" class="result-container hidden">
+            <h2 id="answerText">Děkujeme!</h2>
+            <div id="couponContainer" class="coupon-container hidden">
+                <p class="coupon-label" id="couponValueLabel">Váš kupón:</p>
+                <div id="couponCode" class="coupon-code"></div>
+                <p class="screenshot-info"
+                    style="font-size: 0.9rem; opacity: 0.8; margin-top: 10px; color: var(--accent);">📸 Vyfoťte si
+                    tuto obrazovku pro uplatnění kupónu!</p>
+            </div>
+        </div>
         </div>
     </main>
 
