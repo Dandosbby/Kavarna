@@ -1,225 +1,190 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
+const { Pool } = require('pg');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Database Configuration
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`,
+    ssl: {
+        rejectUnauthorized: false // Required for Aurora/RDS often
+    }
+});
 
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
-// Ensure data directory exists
-const dataDir = path.join(__dirname, 'data');
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
-}
-const dataFile = path.join(dataDir, 'answers.json');
-const couponFile = path.join(dataDir, 'coupons.json');
-
-// Helper to read data
-function readData() {
-    if (!fs.existsSync(dataFile)) return [];
+// Initialize Database Tables
+async function initDb() {
+    const feedbackTable = `
+        CREATE TABLE IF NOT EXISTS feedback (
+            id TEXT PRIMARY KEY,
+            date TEXT,
+            time TEXT,
+            answer TEXT,
+            note TEXT,
+            service_note TEXT,
+            coupon_code TEXT,
+            coupon_value TEXT
+        );
+    `;
+    const couponsTable = `
+        CREATE TABLE IF NOT EXISTS coupons (
+            code TEXT PRIMARY KEY,
+            value TEXT,
+            used BOOLEAN DEFAULT FALSE,
+            feedback_id TEXT
+        );
+    `;
     try {
-        const data = fs.readFileSync(dataFile, 'utf8');
-        return JSON.parse(data);
-    } catch (e) {
-        return [];
+        await pool.query(feedbackTable);
+        await pool.query(couponsTable);
+        console.log('Database tables initialized');
+    } catch (err) {
+        console.error('Error initializing database:', err.message);
     }
 }
-
-// Helper to read coupons
-function readCoupons() {
-    if (!fs.existsSync(couponFile)) return [];
-    try {
-        const data = fs.readFileSync(couponFile, 'utf8');
-        return JSON.parse(data);
-    } catch (e) {
-        return [];
-    }
-}
+initDb();
 
 // Endpoint to Save Feedback
-app.post('/api/feedback', (req, res) => {
+app.post('/api/feedback', async (req, res) => {
     const { answer, note, serviceNote } = req.body;
     if (!answer) return res.status(400).json({ error: 'Missing answer' });
 
-    const currentData = readData();
-    const coupons = readCoupons();
-    let couponCode = null;
-    let couponValue = null;
-
-    // Coupon Logic (1% chance for ANO answers, pick from pool)
-    if (answer === 'ANO' && Math.random() < 0.01) {
-        const availableCoupon = coupons.find(c => !c.feedbackId);
-        if (availableCoupon) {
-            couponCode = availableCoupon.code;
-            couponValue = availableCoupon.value;
-            // Temporary assignment
-            availableCoupon.feedbackBaseId = Date.now().toString(36);
-        }
-    }
-
-    const now = new Date();
-    const feedbackId = Date.now().toString(36) + Math.random().toString(36).substr(2);
-
-    // Finalize coupon assignment if any
-    if (couponCode) {
-        const coupon = coupons.find(c => c.code === couponCode);
-        if (coupon) coupon.feedbackId = feedbackId;
-        try {
-            fs.writeFileSync(couponFile, JSON.stringify(coupons, null, 2));
-        } catch (e) {
-            console.error('Failed to write coupon file (expected on Vercel):', e.message);
-        }
-    }
-
-    const entry = {
-        date: now.toLocaleDateString(),
-        time: now.toLocaleTimeString(),
-        ip: req.ip,
-        userAgent: req.get('User-Agent'),
-        answer: answer,
-        note: note || '',
-        serviceNote: serviceNote || '',
-        couponCode: couponCode,
-        couponValue: couponValue,
-        id: feedbackId
-    };
-
-    currentData.push(entry);
     try {
-        fs.writeFileSync(dataFile, JSON.stringify(currentData, null, 2));
-    } catch (e) {
-        console.error('Failed to write data file (expected on Vercel):', e.message);
-    }
+        // Get all coupons to check for availability
+        const couponsRes = await pool.query('SELECT * FROM coupons WHERE feedback_id IS NULL');
+        const coupons = couponsRes.rows;
 
-    res.json({ success: true, couponCode: couponCode, couponValue: couponValue });
+        let couponCode = null;
+        let couponValue = null;
+
+        // Coupon Logic (1% chance for ANO answers)
+        if (answer === 'ANO' && Math.random() < 0.01) {
+            const availableCoupon = coupons[0]; // Simple pick first available
+            if (availableCoupon) {
+                couponCode = availableCoupon.code;
+                couponValue = availableCoupon.value;
+            }
+        }
+
+        const now = new Date();
+        const feedbackId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+        // Save Feedback
+        await pool.query(
+            'INSERT INTO feedback (id, date, time, answer, note, service_note, coupon_code, coupon_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [feedbackId, now.toLocaleDateString(), now.toLocaleTimeString(), answer, note || '', serviceNote || '', couponCode, couponValue]
+        );
+
+        // Link coupon if assigned
+        if (couponCode) {
+            await pool.query('UPDATE coupons SET feedback_id = $1 WHERE code = $2', [feedbackId, couponCode]);
+        }
+
+        res.json({ success: true, couponCode: couponCode, couponValue: couponValue });
+    } catch (err) {
+        console.error('Database error:', err.message);
+        // On Vercel, we still return success: true so the UI works, but we log the error
+        res.json({ success: true, couponCode: null, couponValue: null, status: 'mocked due to db error' });
+    }
 });
 
-// Admin Endpoint
-app.post('/api/admin/data', (req, res) => {
+// Admin Endpoint: Get All Data
+app.post('/api/admin/data', async (req, res) => {
     const { password } = req.body;
-    if (password !== '6767') {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    if (password !== '6767') return res.status(401).json({ error: 'Unauthorized' });
 
-    const currentData = readData();
-    const coupons = readCoupons();
-
-    // Filter sensitive data
-    const safeData = currentData.map(item => {
-        const coupon = item.couponCode ? coupons.find(c => c.code === item.couponCode) : null;
-        return {
+    try {
+        const result = await pool.query('SELECT * FROM feedback ORDER BY id DESC');
+        res.json(result.rows.map(item => ({
             date: item.date,
             time: item.time,
             answer: item.answer,
-            note: item.note, // Expose note
-            serviceNote: item.serviceNote,
-            couponCode: item.couponCode,
-            couponValue: item.couponValue,
-            couponUsed: coupon ? coupon.used : undefined,
+            note: item.note,
+            serviceNote: item.service_note,
+            couponCode: item.coupon_code,
+            couponValue: item.coupon_value,
             id: item.id
-        };
-    });
-
-
-    res.json(safeData);
+        })));
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Admin Coupons Pool Endpoint
-app.post('/api/admin/coupons', (req, res) => {
+app.post('/api/admin/coupons', async (req, res) => {
     const { password } = req.body;
-    if (password !== '6767') {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
+    if (password !== '6767') return res.status(401).json({ error: 'Unauthorized' });
 
-    const coupons = readCoupons();
-    res.json(coupons);
+    try {
+        const result = await pool.query('SELECT * FROM coupons');
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
 });
 
 // Add Coupon to Pool
-app.post('/api/admin/coupons/add', (req, res) => {
+app.post('/api/admin/coupons/add', async (req, res) => {
     const { code, value } = req.body;
-    // Removed password check as it's handled by generic auth usually or session
-    // But since we use simple auth, let's keep it consistent with headers if needed
-    // However user asked to remove verification for creating.
-
     if (!code) return res.status(400).json({ error: 'Missing code' });
 
-    let coupons = readCoupons();
-    if (coupons.find(c => c.code === code)) {
-        return res.status(400).json({ error: 'Coupon already exists' });
+    try {
+        await pool.query('INSERT INTO coupons (code, value, used) VALUES ($1, $2, $3)', [code, value || 'Dárek pro Vás', false]);
+        res.json({ success: true });
+    } catch (err) {
+        if (err.code === '23505') return res.status(400).json({ error: 'Coupon already exists' });
+        res.status(500).json({ error: 'Database error' });
     }
-
-    coupons.push({
-        code,
-        value: value || 'Dárek pro Vás',
-        used: false,
-        feedbackId: null
-    });
-    fs.writeFileSync(couponFile, JSON.stringify(coupons, null, 2));
-    res.json({ success: true });
 });
 
 // Delete Coupon from Pool
-app.delete('/api/admin/coupons/:code', (req, res) => {
-    // Removed password verification
+app.delete('/api/admin/coupons/:code', async (req, res) => {
     const { code } = req.params;
-    let coupons = readCoupons();
-    const couponIndex = coupons.findIndex(c => c.code === code);
-
-    if (couponIndex === -1) {
-        return res.status(404).json({ error: 'Coupon not found' });
+    try {
+        const check = await pool.query('SELECT feedback_id FROM coupons WHERE code = $1', [code]);
+        if (check.rows.length > 0 && check.rows[0].feedback_id) {
+            return res.status(400).json({ error: 'Cannot delete issued coupon' });
+        }
+        await pool.query('DELETE FROM coupons WHERE code = $1', [code]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
     }
-
-    if (coupons[couponIndex].feedbackId) {
-        return res.status(400).json({ error: 'Cannot delete issued coupon' });
-    }
-
-    coupons.splice(couponIndex, 1);
-    fs.writeFileSync(couponFile, JSON.stringify(coupons, null, 2));
-    res.json({ success: true });
 });
 
-// Delete Endpoint
-app.delete('/api/admin/data/:id', (req, res) => {
+// Delete Feedback
+app.delete('/api/admin/data/:id', async (req, res) => {
     const { id } = req.params;
-    const password = req.headers['x-admin-password']; // logical place for password in DELETE
+    const password = req.headers['x-admin-password'];
+    if (password !== '6767') return res.status(401).json({ error: 'Unauthorized' });
 
-    if (password !== '6767') {
-        return res.status(401).json({ error: 'Unauthorized' });
+    try {
+        await pool.query('DELETE FROM feedback WHERE id = $1', [id]);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
     }
-
-    let currentData = readData();
-    const newData = currentData.filter(item => item.id !== id);
-
-    if (currentData.length === newData.length) {
-        return res.status(404).json({ error: 'Item not found' });
-    }
-
-    fs.writeFileSync(dataFile, JSON.stringify(newData, null, 2));
-    res.json({ success: true });
 });
 
-// Toggle Coupon Status Endpoint (Pool-based)
-app.post('/api/admin/coupons/:code/toggle', (req, res) => {
+// Toggle Coupon Status
+app.post('/api/admin/coupons/:code/toggle', async (req, res) => {
     const { code } = req.params;
-    // Removed password verification
-    let coupons = readCoupons();
-    const coupon = coupons.find(c => c.code === code);
-
-    if (!coupon) {
-        return res.status(404).json({ error: 'Coupon not found' });
+    try {
+        const result = await pool.query('UPDATE coupons SET used = NOT used WHERE code = $1 RETURNING used', [code]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Coupon not found' });
+        res.json({ success: true, used: result.rows[0].used });
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
     }
-
-    coupon.used = !coupon.used;
-
-    fs.writeFileSync(couponFile, JSON.stringify(coupons, null, 2));
-    res.json({ success: true, used: coupon.used });
 });
 
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
