@@ -148,6 +148,35 @@
             border-color: var(--accent);
             background: rgba(255, 255, 255, 0.15);
         }
+
+        .welcome-text {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--accent);
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            20% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            80% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
     </style>
 </head>
 
@@ -168,9 +197,14 @@
 
             <!-- Login State -->
             <div id="loginState" class="admin-login">
-                <input type="password" id="passwordInput" placeholder="Password" />
-                <button id="loginBtn">Login</button>
-                <div id="errorMsg" class="error">Incorrect Password</div>
+                <input type="password" id="passwordInput" placeholder="Heslo" />
+                <button id="loginBtn">Přihlásit se</button>
+                <div id="errorMsg" class="error">Nesprávné heslo</div>
+            </div>
+
+            <!-- Welcome State -->
+            <div id="welcomeState" class="hidden" style="text-align: center; padding: 3rem 0;">
+                <h2 class="welcome-text">Zdravíčko! 👋</h2>
             </div>
 
             <!-- Dashboard State -->
@@ -490,8 +524,19 @@
                     allData = data;
                     renderTable(data);
                     updateStats(data);
+
+                    // Show Welcome State
                     loginState.classList.add('hidden');
-                    dashboardState.classList.remove('hidden');
+                    const welcomeState = document.getElementById('welcomeState');
+                    welcomeState.classList.remove('hidden');
+
+                    // Delay before showing dashboard
+                    setTimeout(() => {
+                        welcomeState.classList.add('hidden');
+                        dashboardState.classList.remove('hidden');
+                        // Reset to first view
+                        switchView('feedback');
+                    }, 2200);
                 } else {
                     const errorData = await response.json();
                     errorMsg.style.display = 'block';
