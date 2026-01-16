@@ -7,6 +7,7 @@
     <title>Sodovkárna - Admin Panel</title>
     <link rel="stylesheet" href="style.css"> <!-- Reuse glass styles -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Specific Admin Styles */
         .admin-login {
@@ -235,12 +236,22 @@
                     style="display: flex; gap: 10px; margin-bottom: 2rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px;">
                     <button id="viewFeedbackBtn" class="nav-btn active"
                         style="padding: 10px 20px; font-size: 1rem; background: rgba(255,255,255,0.1); border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Odpovědi</button>
+                    <button id="viewStatsBtn" class="nav-btn"
+                        style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Grafy
+                        & Statistiky</button>
                     <button id="viewCouponsBtn" class="nav-btn"
                         style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Správa
                         kupónů</button>
                     <button id="viewQuestionsBtn" class="nav-btn"
-                        style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Nastavení
-                        questions</button>
+                        style="padding: 10px 20px; font-size: 1rem; background: transparent; border: none; border-radius: 10px; cursor: pointer; color: var(--text-light);">Nastavení</button>
+                </div>
+
+                <!-- Stats View -->
+                <div id="statsView" class="hidden">
+                    <div id="statsGrid"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                        <!-- Question Charts will be injected here -->
+                    </div>
                 </div>
 
                 <!-- Feedback View -->
@@ -392,11 +403,16 @@
 
         let allData = [];
 
+        const viewStatsBtn = document.getElementById('viewStatsBtn');
+        const statsView = document.getElementById('statsView');
+        const statsGrid = document.getElementById('statsGrid');
+
         loginBtn.addEventListener('click', attemptLogin);
         passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin() });
         logoutBtn.addEventListener('click', () => location.reload());
 
         viewFeedbackBtn.addEventListener('click', () => switchView('feedback'));
+        viewStatsBtn.addEventListener('click', () => switchView('stats'));
         viewCouponsBtn.addEventListener('click', () => switchView('coupons'));
         viewQuestionsBtn.addEventListener('click', () => switchView('questions'));
         addCouponBtn.addEventListener('click', addCoupon);
@@ -409,15 +425,18 @@
 
         function switchView(view) {
             feedbackView.classList.toggle('hidden', view !== 'feedback');
+            statsView.classList.toggle('hidden', view !== 'stats');
             couponView.classList.toggle('hidden', view !== 'coupons');
             questionsView.classList.toggle('hidden', view !== 'questions');
 
             viewFeedbackBtn.style.background = view === 'feedback' ? 'rgba(255,255,255,0.1)' : 'transparent';
+            viewStatsBtn.style.background = view === 'stats' ? 'rgba(255,255,255,0.1)' : 'transparent';
             viewCouponsBtn.style.background = view === 'coupons' ? 'rgba(255,255,255,0.1)' : 'transparent';
             viewQuestionsBtn.style.background = view === 'questions' ? 'rgba(255,255,255,0.1)' : 'transparent';
 
             if (view === 'coupons') fetchCoupons();
             if (view === 'questions') fetchQuestions();
+            if (view === 'stats') renderStats();
         }
 
         async function fetchCoupons() {
@@ -447,6 +466,82 @@
             } catch (e) { console.error(e); }
         }
 
+        async function renderStats() {
+            statsGrid.innerHTML = 'Načítání grafů...';
+            try {
+                const qRes = await fetch('/api/questions');
+                const questions = await qRes.json();
+
+                statsGrid.innerHTML = '';
+
+                questions.forEach(q => {
+                    const canvasId = `chart-${q.id}`;
+                    const card = document.createElement('div');
+                    card.className = 'glass';
+                    card.style.padding = '20px';
+                    card.style.borderRadius = '20px';
+                    card.innerHTML = `
+                        <h4 style="margin-bottom: 15px; font-size: 1rem; opacity: 0.8;">${q.text}</h4>
+                        <div style="height: 200px; position: relative;">
+                            <canvas id="${canvasId}"></canvas>
+                        </div>
+                    `;
+                    statsGrid.appendChild(card);
+
+                    const ctx = document.getElementById(canvasId).getContext('2d');
+
+                    // Aggregate data
+                    const counts = {};
+                    allData.forEach(entry => {
+                        const resp = entry.responses?.[q.id]?.answer;
+                        if (resp !== undefined && resp !== null && resp !== "") {
+                            counts[resp] = (counts[resp] || 0) + 1;
+                        }
+                    });
+
+                    const labels = Object.keys(counts);
+                    const values = Object.values(counts);
+
+                    if (labels.length === 0) {
+                        document.getElementById(canvasId).parentElement.innerHTML = '<p style="text-align:center; padding-top: 80px; opacity: 0.4;">Zatím žádná data</p>';
+                        return;
+                    }
+
+                    new Chart(ctx, {
+                        type: q.type === 'stars' ? 'bar' : 'pie',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                data: values,
+                                backgroundColor: [
+                                    '#C08261', '#8d6e63', '#5d4037', '#F5E6D3', '#FFF4E0'
+                                ],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: q.type !== 'stars',
+                                    position: 'bottom',
+                                    labels: { color: 'rgba(255,255,255,0.7)', font: { family: 'Outfit' } }
+                                }
+                            },
+                            scales: q.type === 'stars' ? {
+                                y: { beginAtZero: true, ticks: { color: 'rgba(255,255,255,0.5)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                                x: { ticks: { color: 'rgba(255,255,255,0.5)' }, grid: { display: false } }
+                            } : {}
+                        }
+                    });
+                });
+            } catch (e) {
+                console.error(e);
+                statsGrid.innerHTML = 'Chyba při načítání statistik.';
+            }
+        }
+
         function renderQuestions(questions) {
             questionsList.innerHTML = '';
             questions.forEach(q => addQuestionRow(q));
@@ -466,6 +561,13 @@
                     <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
                         <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Otázka</span>
                         <input type="text" class="question-text" value="${q.text}" placeholder="Vepište text otázky..." style="width: 100%;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Typ</span>
+                        <select class="type-select" style="height: 38px; border-radius: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 0 10px;">
+                            <option value="yes_no" ${q.type === 'yes_no' ? 'selected' : ''}>ANO / NE</option>
+                            <option value="stars" ${q.type === 'stars' ? 'selected' : ''}>Hvězdičky ⭐</option>
+                        </select>
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
                         <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Textové pole?</span>
@@ -505,6 +607,7 @@
             const questions = Array.from(rows).map(row => ({
                 id: row.dataset.id,
                 text: row.querySelector('.question-text').value,
+                type: row.querySelector('.type-select').value,
                 allowNote: row.querySelector('.note-toggle').checked,
                 yesPrompt: row.querySelector('.yes-prompt').value,
                 noPrompt: row.querySelector('.no-prompt').value,

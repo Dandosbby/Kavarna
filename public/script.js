@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const yesNoButtons = document.getElementById('yesNoButtons');
     const yesBtn = document.getElementById('yesBtn');
     const noBtn = document.getElementById('noBtn');
+    const starRating = document.getElementById('starRating');
+    const stars = starRating.querySelectorAll('span');
 
     const noteContainer = document.getElementById('noteContainer');
     const notePrompt = document.getElementById('notePrompt');
@@ -55,10 +57,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const q = questions[currentStep];
         questionText.classList.remove('hidden');
         questionText.innerText = q.text;
-        yesNoButtons.classList.remove('hidden');
+
         noteContainer.classList.add('hidden');
         noteInput.value = '';
+
+        if (q.type === 'stars') {
+            yesNoButtons.classList.add('hidden');
+            starRating.classList.remove('hidden');
+            resetStars();
+        } else {
+            yesNoButtons.classList.remove('hidden');
+            starRating.classList.add('hidden');
+        }
     }
+
+    function resetStars() {
+        stars.forEach(s => {
+            s.style.opacity = '0.3';
+            s.style.transform = 'scale(1)';
+        });
+    }
+
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            const val = star.dataset.star;
+            // Visual feedback
+            stars.forEach(s => {
+                s.style.opacity = s.dataset.star <= val ? '1' : '0.3';
+                s.style.transform = s.dataset.star <= val ? 'scale(1.2)' : 'scale(1)';
+            });
+
+            setTimeout(() => handleChoice(val), 400);
+        });
+    });
 
     yesBtn.addEventListener('click', () => handleChoice('ANO'));
     noBtn.addEventListener('click', () => handleChoice('NE'));
@@ -80,10 +111,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function showNoteInput(choice) {
         const q = questions[currentStep];
         yesNoButtons.classList.add('hidden');
+        starRating.classList.add('hidden');
         noteContainer.classList.remove('hidden');
-        notePrompt.innerText = choice === 'ANO' ?
-            (q.yesPrompt || "Máte pro nás nějaký postřeh? ✨") :
-            (q.noPrompt || "Mrzí nás to. 😔 Chcete nám říct proč?");
+
+        if (q.type === 'stars') {
+            notePrompt.innerText = choice >= 4 ? (q.yesPrompt || "Děkujeme za skvělé hodnocení! ✨") : (q.noPrompt || "Co můžeme zlepšit? 😔");
+        } else {
+            notePrompt.innerText = choice === 'ANO' ?
+                (q.yesPrompt || "Máte pro nás nějaký postřeh? ✨") :
+                (q.noPrompt || "Mrzí nás to. 😔 Chcete nám říct proč?");
+        }
 
         noteInput.placeholder = q.placeholder || "Vaše zpráva... (nepovinné)";
     }

@@ -54,7 +54,7 @@ async function initDb() {
                 await client.query('SELECT 1');
                 await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT, responses JSONB);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
-                await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE, yes_prompt TEXT, no_prompt TEXT, placeholder TEXT);`);
+                await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE, yes_prompt TEXT, no_prompt TEXT, placeholder TEXT, type TEXT DEFAULT 'yes_no');`);
                 console.log('PostgreSQL tables initialized');
             } finally {
                 client.release();
@@ -116,8 +116,8 @@ async function saveCoupons(coupons) {
 }
 
 const defaultQuestions = [
-    { id: 'q1', text: 'Chutnala Vám káva? ☕️', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?', placeholder: 'Vaše zpráva...' },
-    { id: 'q2', text: 'Chcete ohodnotit dnešní obsluhu? ☕️', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?', placeholder: 'Vaše zpráva...' }
+    { id: 'q1', text: 'Chutnala Vám káva? ☕️', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?', placeholder: 'Vaše zpráva...', type: 'yes_no' },
+    { id: 'q2', text: 'Chcete ohodnotit dnešní obsluhu? ☕️', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?', placeholder: 'Vaše zpráva...', type: 'stars' }
 ];
 
 async function getQuestions() {
@@ -130,7 +130,8 @@ async function getQuestions() {
                 allowNote: q.allow_note,
                 yesPrompt: q.yes_prompt,
                 noPrompt: q.no_prompt,
-                placeholder: q.placeholder
+                placeholder: q.placeholder,
+                type: q.type || 'yes_no'
             })) : defaultQuestions;
         } catch (e) { return defaultQuestions; }
     }
@@ -143,16 +144,15 @@ async function saveQuestions(questions) {
     else if (dbType === 'pg') {
         await pool.query('DELETE FROM questions');
         for (let i = 0; i < questions.length; i++) {
-            await pool.query('INSERT INTO questions (id, text, order_index, allow_note, yes_prompt, no_prompt, placeholder) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-                [questions[i].id, questions[i].text, i, !!questions[i].allowNote, questions[i].yesPrompt || '', questions[i].noPrompt || '', questions[i].placeholder || '']);
+            await pool.query('INSERT INTO questions (id, text, order_index, allow_note, yes_prompt, no_prompt, placeholder, type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                [questions[i].id, questions[i].text, i, !!questions[i].allowNote, questions[i].yesPrompt || '', questions[i].noPrompt || '', questions[i].placeholder || '', questions[i].type || 'yes_no']);
         }
     } else writeLocal(questionFile, questions);
 }
 
 // Endpoint to Save Feedback
 app.post('/api/feedback', async (req, res) => {
-    const { answer, note, serviceNote } = req.body;
-    if (!answer) return res.status(400).json({ error: 'Missing answer' });
+    const { answer, note, serviceNote, responses } = req.body;
 
     let couponCode = null;
     let couponValue = null;
@@ -161,26 +161,41 @@ app.post('/api/feedback', async (req, res) => {
 
     try {
         const coupons = await getCoupons();
-        const available = coupons.find(c => !c.feedbackId);
+        const available = coupons.filter(c => !c.feedbackId && !c.used);
 
-        if (answer === 'ANO' && Math.random() < 0.01 && available) {
-            couponCode = available.code;
-            couponValue = available.value;
-            available.feedbackId = feedbackId;
+        // Logic to win a real coupon from admin pool
+        // Using a reasonable chance (e.g. 20%) if coupons exist
+        if (available.length > 0 && Math.random() < 0.2) {
+            const index = Math.floor(Math.random() * available.length);
+            const prize = available[index];
+            couponCode = prize.code;
+            couponValue = prize.value;
+
             if (dbType === 'pg') {
                 await pool.query('UPDATE coupons SET feedback_id = $1 WHERE code = $2', [feedbackId, couponCode]);
             } else {
+                prize.feedbackId = feedbackId;
                 await saveCoupons(coupons);
             }
         }
 
-        const entry = { id: feedbackId, date: now.toLocaleDateString(), time: now.toLocaleTimeString(), answer, note, serviceNote, couponCode, couponValue };
+        const entry = {
+            id: feedbackId,
+            date: now.toLocaleDateString(),
+            time: now.toLocaleTimeString(),
+            answer: answer || '',
+            note: note || '',
+            serviceNote: serviceNote || '',
+            couponCode,
+            couponValue,
+            responses: responses || {}
+        };
         await saveFeedback(entry);
 
         res.json({ success: true, couponCode, couponValue });
     } catch (err) {
         console.error('Save error:', err.message);
-        res.json({ success: true, couponCode: null, status: 'error-swallowed' });
+        res.status(500).json({ error: 'Failed to save feedback' });
     }
 });
 
