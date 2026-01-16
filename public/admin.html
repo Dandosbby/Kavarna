@@ -175,18 +175,19 @@
 
             <!-- Dashboard State -->
             <div id="dashboardState" class="hidden">
-                <div style="text-align: left; margin-bottom: 1.5rem; display: flex; gap: 2rem;">
-                    <div>
+                <div style="text-align: left; margin-bottom: 2rem; display: flex; flex-wrap: wrap; gap: 2rem;">
+                    <div class="stat-card"
+                        style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; min-width: 160px; border: 1px solid var(--glass-border);">
                         <span
-                            style="opacity: 0.7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Celkem
-                            odpovědí:</span>
-                        <div id="totalAnswers" style="font-size: 1.5rem; font-weight: 700;">0</div>
+                            style="opacity: 0.5; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Odpovědi</span>
+                        <div id="totalAnswers" style="font-size: 2.5rem; font-weight: 700; color: var(--accent);">0
+                        </div>
                     </div>
-                    <div>
+                    <div class="stat-card"
+                        style="background: rgba(255,255,255,0.03); padding: 1.5rem; border-radius: 16px; min-width: 160px; border: 1px solid var(--glass-border);">
                         <span
-                            style="opacity: 0.7; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Vydané
-                            kupóny:</span>
-                        <div id="totalCoupons" style="font-size: 1.5rem; font-weight: 700;">0</div>
+                            style="opacity: 0.5; font-size: 0.8rem; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Kupóny</span>
+                        <div id="totalCoupons" style="font-size: 2.5rem; font-weight: 700; color: #81c784;">0</div>
                     </div>
                 </div>
                 <!-- Navigation -->
@@ -204,14 +205,22 @@
 
                 <!-- Feedback View -->
                 <div id="feedbackView" class="admin-table-container">
+                    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem;">
+                        <button id="mockDataBtn"
+                            style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🧪
+                            Generovat 20 odpovědí</button>
+                        <button id="deleteAllBtn"
+                            style="background: rgba(229, 115, 115, 0.1); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.2); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🗑️
+                            Smazat vše</button>
+                    </div>
                     <table id="dataTable">
                         <thead>
                             <tr>
                                 <th>Datum</th>
                                 <th>Čas</th>
                                 <th>Odpověď</th>
-                                <th>Textové pole (Q1)</th>
-                                <th>Textové pole (Q2)</th>
+                                <th>Kupón?</th>
+                                <th>Text (Q1)</th>
                                 <th>Akce</th>
                             </tr>
                         </thead>
@@ -350,6 +359,9 @@
         addCouponBtn.addEventListener('click', addCoupon);
         addQuestionBtn.addEventListener('click', () => addQuestionRow());
         saveQuestionsBtn.addEventListener('click', saveQuestions);
+
+        document.getElementById('mockDataBtn').addEventListener('click', generateMockData);
+        document.getElementById('deleteAllBtn').addEventListener('click', deleteAllFeedback);
 
         function switchView(view) {
             feedbackView.classList.toggle('hidden', view !== 'feedback');
@@ -509,11 +521,11 @@
                 tr.innerHTML = `
                     <td>${row.date}</td>
                     <td>${row.time}</td>
-                    <td><span style="color: ${row.answer === 'ANO' ? '#81c784' : '#e57373'}">${row.answer}</span></td>
-                    <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${row.note || ''}">${note}</td>
-                    <td style="max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${row.serviceNote || ''}">${row.serviceNote || '-'}</td>
+                    <td><span style="color: ${row.answer === 'ANO' ? '#81c784' : '#e57373'}; font-weight:700;">${row.answer}</span></td>
+                    <td>${row.couponCode ? '<span style="color: #81c784; font-weight:700;">✨ ANO</span>' : '<span style="opacity:0.4;">NE</span>'}</td>
+                    <td style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${row.note || ''}">${note}</td>
                     <td>
-                        ${row.id ? `<button onclick="deleteEntry('${row.id}'); event.stopPropagation();" style="padding: 4px 10px; font-size: 0.8rem; background: #e57373; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>` : '-'}
+                        <button onclick="deleteEntry('${row.id}'); event.stopPropagation();" style="padding: 6px 12px; font-size: 0.8rem; background: rgba(229,115,115,0.1); color: #e57373; border: 1px solid rgba(229,115,115,0.2); border-radius: 8px; cursor: pointer;">Smazat</button>
                     </td>
                 `;
                 tableBody.appendChild(tr);
@@ -664,23 +676,40 @@
         }
 
         async function deleteEntry(id) {
+            if (!confirm('Opravdu chcete smazat tuto odpověď?')) return;
             const password = passwordInput.value;
-
             try {
                 const response = await fetch(`/api/admin/data/${id}`, {
                     method: 'DELETE',
                     headers: { 'x-admin-password': password }
                 });
+                if (response.ok) attemptLogin();
+            } catch (e) { console.error(e); }
+        }
 
-                if (response.ok) {
-                    attemptLogin();
-                } else {
-                    alert('Failed to delete');
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Error deleting');
-            }
+        async function generateMockData() {
+            const password = passwordInput.value;
+            try {
+                const response = await fetch('/api/admin/data/mock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                if (response.ok) attemptLogin();
+            } catch (e) { console.error(e); }
+        }
+
+        async function deleteAllFeedback() {
+            if (!confirm('⚠️ VAROVÁNÍ: Opravdu chcete smazat ÚPLNĚ VŠECHNY odpovědi? Tato akce je nevratná.')) return;
+            const password = passwordInput.value;
+            try {
+                const response = await fetch('/api/admin/data/all', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+                if (response.ok) attemptLogin();
+            } catch (e) { console.error(e); }
         }
     </script>
 </body>

@@ -272,4 +272,51 @@ app.delete('/api/admin/data/:id', checkAuth, async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.delete('/api/admin/data/all', checkAuth, async (req, res) => {
+    try {
+        if (dbType === 'pg') await pool.query('DELETE FROM feedback');
+        else if (dbType === 'kv') await kv.set('feedbacks', []);
+        else writeLocal(dataFile, []);
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/data/mock', checkAuth, async (req, res) => {
+    try {
+        const mockEntries = [];
+        const answers = ['ANO', 'NE'];
+        const notes = ['Super káva!', 'Příliš horké', 'Dokonalá pěna', 'Trošku hořké', 'Nejlepší v okolí', 'Obsluha byla pomalá', 'Krásné prostředí', 'Doporučuji!'];
+        const serviceNotes = ['Velmi milá slečna', 'Čekal jsem dlouho', 'Bez problémů', 'Skvělý přístup', 'Příště přijdu zas'];
+
+        for (let i = 0; i < 20; i++) {
+            const date = new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 7);
+            const ans = answers[Math.floor(Math.random() * answers.length)];
+            mockEntries.push({
+                id: Math.random().toString(36).substr(2, 9),
+                date: date.toLocaleDateString(),
+                time: date.toLocaleTimeString(),
+                answer: ans,
+                note: ans === 'NE' ? notes[Math.floor(Math.random() * notes.length)] : '',
+                serviceNote: Math.random() > 0.5 ? serviceNotes[Math.floor(Math.random() * serviceNotes.length)] : '',
+                couponCode: Math.random() > 0.8 ? 'MOCK-' + Math.random().toString(36).substr(2, 5).toUpperCase() : null,
+                couponValue: 'Zkušební sleva'
+            });
+        }
+
+        if (dbType === 'kv') {
+            const current = await getFeedbacks();
+            await kv.set('feedbacks', [...current, ...mockEntries]);
+        } else if (dbType === 'pg') {
+            for (const entry of mockEntries) {
+                await pool.query('INSERT INTO feedback (id, date, time, answer, note, service_note, coupon_code, coupon_value) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                    [entry.id, entry.date, entry.time, entry.answer, entry.note, entry.serviceNote, entry.couponCode, entry.couponValue]);
+            }
+        } else {
+            const current = readLocal(dataFile);
+            writeLocal(dataFile, [...current, ...mockEntries]);
+        }
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.listen(PORT, () => console.log(`Server is running ${dbType} on port ${PORT}`));
