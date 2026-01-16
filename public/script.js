@@ -78,9 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showNoteInput(choice) {
+        const q = questions[currentStep];
         yesNoButtons.classList.add('hidden');
         noteContainer.classList.remove('hidden');
-        notePrompt.innerText = choice === 'NE' ? "Mrzí nás to. 😔 Chcete nám říct proč?" : "Máte pro nás nějaký postřeh? ✨";
+        notePrompt.innerText = choice === 'ANO' ?
+            (q.yesPrompt || "Máte pro nás nějaký postřeh? ✨") :
+            (q.noPrompt || "Mrzí nás to. 😔 Chcete nám říct proč?");
     }
 
     submitNoteBtn.addEventListener('click', () => {

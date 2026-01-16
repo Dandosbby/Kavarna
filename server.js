@@ -54,7 +54,7 @@ async function initDb() {
                 await client.query('SELECT 1');
                 await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT, responses JSONB);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
-                await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE);`);
+                await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE, yes_prompt TEXT, no_prompt TEXT);`);
                 console.log('PostgreSQL tables initialized');
             } finally {
                 client.release();
@@ -116,8 +116,8 @@ async function saveCoupons(coupons) {
 }
 
 const defaultQuestions = [
-    { id: 'q1', text: 'Chutnala Vám káva? ☕️', allowNote: true },
-    { id: 'q2', text: 'Chcete ohodnotit dnešní obsluhu? ☕️', allowNote: true }
+    { id: 'q1', text: 'Chutnala Vám káva? ☕️', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?' },
+    { id: 'q2', text: 'Chcete ohodnotit dnešní obsluhu? ☕️', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?' }
 ];
 
 async function getQuestions() {
@@ -125,7 +125,12 @@ async function getQuestions() {
     if (dbType === 'pg') {
         try {
             const res = await pool.query('SELECT * FROM questions ORDER BY order_index ASC');
-            return res.rows.length > 0 ? res.rows.map(q => ({ ...q, allowNote: q.allow_note })) : defaultQuestions;
+            return res.rows.length > 0 ? res.rows.map(q => ({
+                ...q,
+                allowNote: q.allow_note,
+                yesPrompt: q.yes_prompt,
+                noPrompt: q.no_prompt
+            })) : defaultQuestions;
         } catch (e) { return defaultQuestions; }
     }
     const local = readLocal(questionFile);
@@ -137,7 +142,8 @@ async function saveQuestions(questions) {
     else if (dbType === 'pg') {
         await pool.query('DELETE FROM questions');
         for (let i = 0; i < questions.length; i++) {
-            await pool.query('INSERT INTO questions (id, text, order_index, allow_note) VALUES ($1, $2, $3, $4)', [questions[i].id, questions[i].text, i, !!questions[i].allowNote]);
+            await pool.query('INSERT INTO questions (id, text, order_index, allow_note, yes_prompt, no_prompt) VALUES ($1, $2, $3, $4, $5, $6)',
+                [questions[i].id, questions[i].text, i, !!questions[i].allowNote, questions[i].yesPrompt || '', questions[i].noPrompt || '']);
         }
     } else writeLocal(questionFile, questions);
 }

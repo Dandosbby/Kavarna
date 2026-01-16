@@ -452,31 +452,44 @@
             questions.forEach(q => addQuestionRow(q));
         }
 
-        function addQuestionRow(q = { id: Date.now().toString(), text: '', allowNote: true }) {
+        function addQuestionRow(q = { id: Date.now().toString(), text: '', allowNote: true, yesPrompt: 'Máte pro nás nějaký postřeh? ✨', noPrompt: 'Mrzí nás to. 😔 Chcete nám říct proč?' }) {
             const div = document.createElement('div');
             div.className = 'question-row';
             div.dataset.id = q.id;
             div.style.display = 'flex';
-            div.style.alignItems = 'center';
+            div.style.flexDirection = 'column';
             div.style.gap = '15px';
+            div.style.position = 'relative';
 
             div.innerHTML = `
-                <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
-                    <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Otázka</span>
-                    <input type="text" value="${q.text}" placeholder="Vepište text otázky..." style="width: 100%;">
+                <div style="display: flex; gap: 15px; align-items: flex-end;">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Otázka</span>
+                        <input type="text" class="question-text" value="${q.text}" placeholder="Vepište text otázky..." style="width: 100%;">
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
+                        <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Textové pole?</span>
+                        <label class="switch" style="cursor: pointer; display: flex; align-items: center; justify-content: center; height: 38px;">
+                            <input type="checkbox" ${q.allowNote !== false ? 'checked' : ''} class="note-toggle" style="width: 20px; height: 20px; cursor: pointer;" onchange="this.parentElement.parentElement.parentElement.nextElementSibling.classList.toggle('hidden', !this.checked)">
+                        </label>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                        style="background: rgba(229, 115, 115, 0.2); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.3); border-radius: 12px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: all 0.2s ease;"
+                        onmouseover="this.style.background='rgba(229, 115, 115, 0.4)'"
+                        onmouseout="this.style.background='rgba(229, 115, 115, 0.2)'">
+                        &times;
+                    </button>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 5px; align-items: center;">
-                    <span style="font-size: 0.8rem; opacity: 0.6; text-transform: uppercase; font-weight: 700; letter-spacing: 1px;">Textové pole?</span>
-                    <label class="switch" style="cursor: pointer; display: flex; align-items: center; justify-content: center; height: 38px;">
-                        <input type="checkbox" ${q.allowNote !== false ? 'checked' : ''} class="note-toggle" style="width: 20px; height: 20px; cursor: pointer;">
-                    </label>
+                <div class="prompts-container ${q.allowNote !== false ? '' : 'hidden'}" style="display: flex; gap: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 0.7rem; color: #81c784; opacity: 0.8; text-transform: uppercase; font-weight: 700;">Výzva po "ANO"</span>
+                        <input type="text" class="yes-prompt" value="${q.yesPrompt || ''}" placeholder="Děkujeme! Jaký je váš postřeh?" style="font-size: 0.9rem;">
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 0.7rem; color: #e57373; opacity: 0.8; text-transform: uppercase; font-weight: 700;">Výzva po "NE"</span>
+                        <input type="text" class="no-prompt" value="${q.noPrompt || ''}" placeholder="Mrzí nás to. Chcete nám říct víc?" style="font-size: 0.9rem;">
+                    </div>
                 </div>
-                <button onclick="this.parentElement.remove()" 
-                    style="background: rgba(229, 115, 115, 0.2); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.3); border-radius: 12px; width: 45px; height: 45px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: all 0.2s ease;"
-                    onmouseover="this.style.background='rgba(229, 115, 115, 0.4)'"
-                    onmouseout="this.style.background='rgba(229, 115, 115, 0.2)'">
-                    &times;
-                </button>
             `;
             questionsList.appendChild(div);
         }
@@ -485,8 +498,10 @@
             const rows = document.querySelectorAll('.question-row');
             const questions = Array.from(rows).map(row => ({
                 id: row.dataset.id,
-                text: row.querySelector('input[type="text"]').value,
-                allowNote: row.querySelector('.note-toggle').checked
+                text: row.querySelector('.question-text').value,
+                allowNote: row.querySelector('.note-toggle').checked,
+                yesPrompt: row.querySelector('.yes-prompt').value,
+                noPrompt: row.querySelector('.no-prompt').value
             }));
 
             const password = passwordInput.value;
