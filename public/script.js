@@ -58,15 +58,8 @@ document.addEventListener('DOMContentLoaded', () => {
     fetch('/api/public-stats')
         .then(res => res.json())
         .then(data => {
-            if (data.count > 0) {
-                document.getElementById('statCount').classList.remove('hidden');
-                document.getElementById('reviewCountDisplay').innerText = data.count;
-
-                if (parseFloat(data.averageStars) > 0) {
-                    document.getElementById('statStars').classList.remove('hidden');
-                    document.getElementById('avgStarsDisplay').innerText = data.averageStars;
-                }
-            }
+            document.getElementById('reviewCountDisplay').innerText = data.count || 0;
+            document.getElementById('avgStarsDisplay').innerText = data.averageStars || "0.0";
         })
         .catch(err => console.error('Failed to load public stats:', err));
 
