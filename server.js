@@ -218,6 +218,36 @@ app.get('/api/questions', async (req, res) => {
     try { res.json(await getQuestions()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+app.get('/api/public-stats', async (req, res) => {
+    try {
+        const feedbacks = await getFeedbacks();
+        const questions = await getQuestions();
+
+        const starQuestions = questions.filter(q => q.type === 'stars');
+        let totalStars = 0;
+        let starCount = 0;
+
+        feedbacks.forEach(f => {
+            starQuestions.forEach(q => {
+                const val = parseFloat(f.responses?.[q.id]?.answer);
+                if (!isNaN(val)) {
+                    totalStars += val;
+                    starCount++;
+                }
+            });
+        });
+
+        const avgStars = starCount > 0 ? (totalStars / starCount).toFixed(1) : "0.0";
+
+        res.json({
+            count: feedbacks.length,
+            averageStars: avgStars
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.post('/api/admin/questions', checkAuth, async (req, res) => {
     try {
         const { questions } = req.body;

@@ -468,12 +468,33 @@
 
                 questions.forEach(q => {
                     const canvasId = `chart-${q.id}`;
+
+                    // Aggregate data
+                    let totalVal = 0;
+                    let countVal = 0;
+                    const counts = {};
+
+                    allData.forEach(entry => {
+                        const resp = entry.responses?.[q.id]?.answer;
+                        if (resp !== undefined && resp !== null && resp !== "") {
+                            counts[resp] = (counts[resp] || 0) + 1;
+                            if (q.type === 'stars') {
+                                totalVal += parseFloat(resp);
+                                countVal++;
+                            }
+                        }
+                    });
+
+                    const avg = countVal > 0 ? (totalVal / countVal).toFixed(1) : null;
                     const card = document.createElement('div');
                     card.className = 'glass';
                     card.style.padding = '20px';
                     card.style.borderRadius = '20px';
                     card.innerHTML = `
-                        <h4 style="margin-bottom: 15px; font-size: 1rem; opacity: 0.8;">${q.text}</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+                            <h4 style="margin: 0; font-size: 1rem; opacity: 0.8; max-width: 70%;">${q.text}</h4>
+                            ${avg ? `<div style="background: var(--accent); color: var(--bg-dark); padding: 4px 10px; border-radius: 12px; font-weight: 700; font-size: 0.9rem;">⭐ ${avg}</div>` : ''}
+                        </div>
                         <div style="height: 200px; position: relative;">
                             <canvas id="${canvasId}"></canvas>
                         </div>
@@ -481,16 +502,6 @@
                     statsGrid.appendChild(card);
 
                     const ctx = document.getElementById(canvasId).getContext('2d');
-
-                    // Aggregate data
-                    const counts = {};
-                    allData.forEach(entry => {
-                        const resp = entry.responses?.[q.id]?.answer;
-                        if (resp !== undefined && resp !== null && resp !== "") {
-                            counts[resp] = (counts[resp] || 0) + 1;
-                        }
-                    });
-
                     const labels = Object.keys(counts);
                     const values = Object.values(counts);
 

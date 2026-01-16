@@ -48,12 +48,27 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(res => res.json())
         .then(data => {
             questions = data;
-            // Removed automatic renderQuestion call
         })
         .catch(err => {
             console.error('Failed to load questions:', err);
             questionText.innerText = "Chyba při načítání.";
         });
+
+    // Load public stats for welcome screen
+    fetch('/api/public-stats')
+        .then(res => res.json())
+        .then(data => {
+            if (data.count > 0) {
+                document.getElementById('statCount').classList.remove('hidden');
+                document.getElementById('reviewCountDisplay').innerText = data.count;
+
+                if (parseFloat(data.averageStars) > 0) {
+                    document.getElementById('statStars').classList.remove('hidden');
+                    document.getElementById('avgStarsDisplay').innerText = data.averageStars;
+                }
+            }
+        })
+        .catch(err => console.error('Failed to load public stats:', err));
 
     function renderQuestion() {
         const q = questions[currentStep];
