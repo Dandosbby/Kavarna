@@ -176,12 +176,17 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(finalPayload)
         })
-            .then(res => res.json())
-            .then(data => {
+            .then(async res => {
+                const data = await res.json();
+                if (res.status === 429) {
+                    alert(data.error || 'Dnes jste již hodnocení odeslali.');
+                    location.reload();
+                    return;
+                }
                 if (data.success) {
                     showThankYou(data.couponCode, data.couponValue);
                 } else {
-                    alert('Chyba při odesílání.');
+                    alert(data.error || 'Chyba při odesílání.');
                     location.reload();
                 }
             })
