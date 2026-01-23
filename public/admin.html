@@ -271,9 +271,6 @@
                             style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;"
                             title="Obnovit data">🔄</button>
                         <div style="flex-grow: 1;"></div>
-                        <button id="resetCooldownsBtn"
-                            style="background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">⏳
-                            Resetovat Cooldowny</button>
                         <button id="deleteAllBtn"
                             style="background: rgba(229, 115, 115, 0.1); color: #e57373; border: 1px solid rgba(229, 115, 115, 0.2); padding: 8px 16px; border-radius: 10px; cursor: pointer; font-size: 0.9rem;">🔥🔥
                             Smazat ÚPLNĚ VŠE</button>
@@ -967,45 +964,6 @@
                 if (response.ok) attemptLogin();
                 else alert('Chyba při mazání.');
             } catch (e) { console.error(e); }
-        }
-
-        async function resetCooldowns() {
-            if (!confirm('Opravdu chcete resetovat VŠECHNY IP cooldowny? Hosté budou moci znovu odeslat hodnocení hned.')) return;
-
-            // Get password from input or localStorage
-            let password = passwordInput.value;
-            if (!password) password = localStorage.getItem('admin_password');
-
-            if (!password) {
-                alert('Chyba: Nejste přihlášeni nebo chybí heslo.');
-                return;
-            }
-
-            try {
-                console.log('Attempting to reset cooldowns...');
-                const response = await fetch('/api/admin/cooldowns/reset', {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-admin-password': password
-                    }
-                });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.success) {
-                        alert('✅ Cooldowny byly úspěšně vymazány pro všechny IP adresy.');
-                    } else {
-                        alert('❌ Server vrátil chybu: ' + (result.error || 'Neznámá chyba'));
-                    }
-                } else {
-                    const errData = await response.json().catch(() => ({}));
-                    alert('❌ Chyba při resetování (Status: ' + response.status + '): ' + (errData.error || 'Přístup odepřen'));
-                }
-            } catch (e) {
-                console.error('Reset error:', e);
-                alert('❌ Síťová chyba při resetování. Zkontrolujte konzoli.');
-            }
         }
     </script>
 </body>

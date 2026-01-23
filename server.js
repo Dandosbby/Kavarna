@@ -15,7 +15,6 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
 const dataFile = path.join(dataDir, 'answers.json');
 const couponFile = path.join(dataDir, 'coupons.json');
 const questionFile = path.join(dataDir, 'questions.json');
-const cooldownFile = path.join(dataDir, 'cooldowns.json');
 
 // Helper to read/write local files
 function readLocal(file) {
@@ -56,7 +55,6 @@ async function initDb() {
                 await client.query(`CREATE TABLE IF NOT EXISTS feedback (id TEXT PRIMARY KEY, date TEXT, time TEXT, answer TEXT, note TEXT, service_note TEXT, coupon_code TEXT, coupon_value TEXT, responses JSONB);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS coupons (code TEXT PRIMARY KEY, value TEXT, used BOOLEAN DEFAULT FALSE, feedback_id TEXT);`);
                 await client.query(`CREATE TABLE IF NOT EXISTS questions (id TEXT PRIMARY KEY, text TEXT, order_index INTEGER, allow_note BOOLEAN DEFAULT TRUE, yes_prompt TEXT, no_prompt TEXT, placeholder TEXT, type TEXT DEFAULT 'yes_no');`);
-                await client.query(`CREATE TABLE IF NOT EXISTS ip_cooldowns (ip TEXT, date TEXT, PRIMARY KEY (ip, date));`);
                 console.log('PostgreSQL tables initialized');
             } finally {
                 client.release();
@@ -152,49 +150,8 @@ async function saveQuestions(questions) {
     } else writeLocal(questionFile, questions);
 }
 
-// --- Cooldown Helpers ---
-async function checkCooldown(ip) {
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
-    if (dbType === 'kv') {
-        const cooldowns = (await kv.get('cooldowns')) || {};
-        return cooldowns[ip] === today;
-    }
-    if (dbType === 'pg') {
-        const res = await pool.query('SELECT 1 FROM ip_cooldowns WHERE ip = $1 AND date = $2', [ip, today]);
-        return res.rows.length > 0;
-    }
-    let cooldowns = readLocal(cooldownFile);
-    if (Array.isArray(cooldowns)) cooldowns = {};
-    return cooldowns[ip] === today;
-}
-
-async function setCooldown(ip) {
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
-    if (dbType === 'kv') {
-        const cooldowns = (await kv.get('cooldowns')) || {};
-        cooldowns[ip] = today;
-        await kv.set('cooldowns', cooldowns);
-    } else if (dbType === 'pg') {
-        await pool.query('INSERT INTO ip_cooldowns (ip, date) VALUES ($1, $2) ON CONFLICT (ip, date) DO NOTHING', [ip, today]);
-    } else {
-        let cooldowns = readLocal(cooldownFile);
-        if (Array.isArray(cooldowns)) cooldowns = {};
-        cooldowns[ip] = today;
-        writeLocal(cooldownFile, cooldowns);
-    }
-}
-
 // Endpoint to Save Feedback
 app.post('/api/feedback', async (req, res) => {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    const isLocal = ip === '::1' || ip === '127.0.0.1';
-
-    // Check cooldown (skip for local testing if desired, but here we enforce it)
-    const onCooldown = await checkCooldown(ip);
-    if (onCooldown) {
-        return res.status(429).json({ success: false, error: 'Dnes jste již hodnocení odeslali. Děkujeme!' });
-    }
-
     const { answer, note, serviceNote, responses } = req.body;
 
     let couponCode = null;
@@ -234,9 +191,6 @@ app.post('/api/feedback', async (req, res) => {
             responses: responses || {}
         };
         await saveFeedback(entry);
-
-        // Set cooldown after successful save
-        await setCooldown(ip);
 
         res.json({ success: true, couponCode, couponValue });
     } catch (err) {
@@ -364,20 +318,6 @@ app.delete('/api/admin/data/all', checkAuth, async (req, res) => {
         else writeLocal(dataFile, []);
         res.json({ success: true });
     } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.delete('/api/admin/cooldowns/reset', checkAuth, async (req, res) => {
-    try {
-        console.log('Resetting all IP cooldowns...');
-        if (dbType === 'pg') await pool.query('DELETE FROM ip_cooldowns');
-        else if (dbType === 'kv') await kv.set('cooldowns', {});
-        else writeLocal(cooldownFile, {});
-        console.log('Cooldowns reset successful');
-        res.json({ success: true });
-    } catch (err) {
-        console.error('Reset error:', err.message);
-        res.status(500).json({ error: err.message });
-    }
 });
 
 app.delete('/api/admin/data/batch/20', checkAuth, async (req, res) => {
