@@ -840,8 +840,13 @@
 
         async function toggleCoupon(code) {
             try {
+                let password = passwordInput.value || localStorage.getItem('admin_password');
                 const response = await fetch(`/api/admin/coupons/${code}/toggle`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-password': password
+                    }
                 });
 
                 if (response.ok) {
@@ -873,9 +878,13 @@
             }
 
             try {
+                let password = passwordInput.value || localStorage.getItem('admin_password');
                 const response = await fetch('/api/admin/coupons/add', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-password': password
+                    },
                     body: JSON.stringify({ code, value })
                 });
 
@@ -894,9 +903,12 @@
         }
 
         async function deleteCoupon(code) {
+            if (!confirm(`Smazat kupón ${code}?`)) return;
             try {
+                let password = passwordInput.value || localStorage.getItem('admin_password');
                 const response = await fetch(`/api/admin/coupons/${code}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: { 'x-admin-password': password }
                 });
 
                 if (response.ok) {

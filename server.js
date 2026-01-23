@@ -261,7 +261,7 @@ app.post('/api/admin/coupons', checkAuth, async (req, res) => {
     try { res.json(await getCoupons()); } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/coupons/add', async (req, res) => {
+app.post('/api/admin/coupons/add', checkAuth, async (req, res) => {
     const { code, value } = req.body;
     try {
         if (dbType === 'pg') {
@@ -276,7 +276,7 @@ app.post('/api/admin/coupons/add', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.delete('/api/admin/coupons/:code', async (req, res) => {
+app.delete('/api/admin/coupons/:code', checkAuth, async (req, res) => {
     const { code } = req.params;
     try {
         if (dbType === 'pg') {
@@ -294,7 +294,7 @@ app.delete('/api/admin/coupons/:code', async (req, res) => {
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.post('/api/admin/coupons/:code/toggle', async (req, res) => {
+app.post('/api/admin/coupons/:code/toggle', checkAuth, async (req, res) => {
     const { code } = req.params;
     try {
         if (dbType === 'pg') {
