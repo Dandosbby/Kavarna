@@ -970,18 +970,41 @@
         }
 
         async function resetCooldowns() {
-            if (!confirm('Opravdu chcete resetovat všechny IP cooldowny? Hosté budou moci znovu odeslat hodnocení hned.')) return;
-            const password = passwordInput.value;
+            if (!confirm('Opravdu chcete resetovat VŠECHNY IP cooldowny? Hosté budou moci znovu odeslat hodnocení hned.')) return;
+
+            // Get password from input or localStorage
+            let password = passwordInput.value;
+            if (!password) password = localStorage.getItem('admin_password');
+
+            if (!password) {
+                alert('Chyba: Nejste přihlášeni nebo chybí heslo.');
+                return;
+            }
+
             try {
+                console.log('Attempting to reset cooldowns...');
                 const response = await fetch('/api/admin/cooldowns/reset', {
                     method: 'DELETE',
-                    headers: { 'x-admin-password': password }
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-password': password
+                    }
                 });
-                if (response.ok) alert('Cooldowny byly vymazány.');
-                else alert('Chyba při resetování.');
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('✅ Cooldowny byly úspěšně vymazány pro všechny IP adresy.');
+                    } else {
+                        alert('❌ Server vrátil chybu: ' + (result.error || 'Neznámá chyba'));
+                    }
+                } else {
+                    const errData = await response.json().catch(() => ({}));
+                    alert('❌ Chyba při resetování (Status: ' + response.status + '): ' + (errData.error || 'Přístup odepřen'));
+                }
             } catch (e) {
                 console.error('Reset error:', e);
-                alert('Chyba při resetování (viz konzole).');
+                alert('❌ Síťová chyba při resetování. Zkontrolujte konzoli.');
             }
         }
     </script>
