@@ -178,6 +178,73 @@
                 transform: translateY(-20px);
             }
         }
+
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+
+            .nav-tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+                padding-bottom: 5px;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .nav-btn {
+                padding: 8px 15px !important;
+                font-size: 0.9rem !important;
+            }
+
+            .admin-table-container {
+                max-height: none;
+                overflow-x: auto;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            th,
+            td {
+                padding: 8px;
+            }
+
+            .welcome-text {
+                font-size: 2rem;
+            }
+
+            .stat-card {
+                padding: 1rem !important;
+                min-width: 120px !important;
+            }
+
+            .stat-card div {
+                font-size: 1.8rem !important;
+            }
+
+            .question-row {
+                gap: 10px !important;
+            }
+
+            .question-row>div:first-child {
+                flex-wrap: wrap;
+            }
+
+            #modalDateTime {
+                font-size: 0.9rem;
+            }
+
+            .modal-content {
+                padding: 1.5rem;
+                width: 95%;
+            }
+        }
     </style>
 </head>
 
@@ -293,14 +360,15 @@
                 </div>
 
                 <div id="couponView" class="admin-table-container hidden">
-                    <div style="margin-bottom: 1.5rem; display: flex; gap: 10px; align-items: center;">
+                    <div style="margin-bottom: 1.5rem; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <button id="refreshCouponsBtn"
-                            style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1.1rem;"
+                            style="background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); padding: 8px 12px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; flex-shrink: 0;"
                             title="Obnovit kupóny">🔄</button>
-                        <input type="text" id="newCouponCode" placeholder="Kód (např. KAVA10)" style="flex: 1;">
-                        <input type="text" id="newCouponValue" placeholder="Hodnota (např. Sleva 10%)" style="flex: 2;">
+                        <input type="text" id="newCouponCode" placeholder="Kód" style="flex: 1; min-width: 100px;">
+                        <input type="text" id="newCouponValue" placeholder="Hodnota" style="flex: 2; min-width: 150px;">
                         <button id="addCouponBtn"
-                            style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700;">Přidat</button>
+                            style="background: var(--accent); color: var(--text-dark); border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%;">Přidat
+                            Kupón</button>
                     </div>
                     <table id="couponTable">
                         <thead>
@@ -336,7 +404,8 @@
             </div> <!-- End Dashboard State -->
 
             <button id="logoutBtn"
-                style="margin-top: 20px; background: transparent; border: 1px solid var(--glass-border);">Logout</button>
+                style="margin-top: 20px; background: transparent; border: 1px solid var(--glass-border); width: 100%; padding: 12px; border-radius: 12px; color: var(--text-light); cursor: pointer; opacity: 0.6;">Odhlásit
+                se</button>
         </div>
         </div>
     </main>
@@ -454,7 +523,6 @@
         saveQuestionsBtn.addEventListener('click', saveQuestions);
 
         document.getElementById('deleteAllBtn').addEventListener('click', deleteAllFeedback);
-        document.getElementById('resetCooldownsBtn').addEventListener('click', resetCooldowns);
 
         function switchView(view) {
             feedbackView.classList.toggle('hidden', view !== 'feedback');
