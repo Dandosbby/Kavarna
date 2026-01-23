@@ -154,7 +154,7 @@ async function saveQuestions(questions) {
 
 // --- Cooldown Helpers ---
 async function checkCooldown(ip) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
     if (dbType === 'kv') {
         const cooldowns = (await kv.get('cooldowns')) || {};
         return cooldowns[ip] === today;
@@ -169,7 +169,7 @@ async function checkCooldown(ip) {
 }
 
 async function setCooldown(ip) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
     if (dbType === 'kv') {
         const cooldowns = (await kv.get('cooldowns')) || {};
         cooldowns[ip] = today;
