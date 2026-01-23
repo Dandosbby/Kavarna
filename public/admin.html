@@ -457,6 +457,7 @@
         saveQuestionsBtn.addEventListener('click', saveQuestions);
 
         document.getElementById('deleteAllBtn').addEventListener('click', deleteAllFeedback);
+        document.getElementById('resetCooldownsBtn').addEventListener('click', resetCooldowns);
 
         function switchView(view) {
             feedbackView.classList.toggle('hidden', view !== 'feedback');
@@ -978,9 +979,11 @@
                 });
                 if (response.ok) alert('Cooldowny byly vymazány.');
                 else alert('Chyba při resetování.');
-            } catch (e) { console.error(e); }
+            } catch (e) {
+                console.error('Reset error:', e);
+                alert('Chyba při resetování (viz konzole).');
+            }
         }
-        document.getElementById('resetCooldownsBtn').addEventListener('click', resetCooldowns);
     </script>
 </body>
 

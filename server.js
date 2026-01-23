@@ -368,11 +368,16 @@ app.delete('/api/admin/data/all', checkAuth, async (req, res) => {
 
 app.delete('/api/admin/cooldowns/reset', checkAuth, async (req, res) => {
     try {
+        console.log('Resetting all IP cooldowns...');
         if (dbType === 'pg') await pool.query('DELETE FROM ip_cooldowns');
         else if (dbType === 'kv') await kv.set('cooldowns', {});
         else writeLocal(cooldownFile, {});
+        console.log('Cooldowns reset successful');
         res.json({ success: true });
-    } catch (err) { res.status(500).json({ error: err.message }); }
+    } catch (err) {
+        console.error('Reset error:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.delete('/api/admin/data/batch/20', checkAuth, async (req, res) => {
