@@ -960,6 +960,7 @@
                     newCouponCode.value = '';
                     newCouponValue.value = '';
                     fetchCoupons();
+                    alert('✅ Kupón úspěšně přidán!');
                 } else {
                     const data = await response.json();
                     alert(data.error || 'Failed to add coupon');
