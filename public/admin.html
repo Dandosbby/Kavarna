@@ -541,7 +541,7 @@
         }
 
         async function fetchCoupons() {
-            const password = passwordInput.value;
+            const password = passwordInput.value || localStorage.getItem('admin_password');
             try {
                 const response = await fetch('/api/admin/coupons', {
                     method: 'POST',
@@ -726,7 +726,7 @@
                 placeholder: row.querySelector('.placeholder-text').value
             }));
 
-            const password = passwordInput.value;
+            const password = passwordInput.value || localStorage.getItem('admin_password');
             try {
                 const response = await fetch('/api/admin/questions', {
                     method: 'POST',
@@ -805,7 +805,7 @@
         }
 
         async function refreshData() {
-            const password = passwordInput.value;
+            const password = passwordInput.value || localStorage.getItem('admin_password');
             const refreshBtn = document.getElementById('refreshFeedbackBtn');
             const originalText = refreshBtn.textContent;
 
@@ -1022,7 +1022,7 @@
 
         async function deleteEntry(id) {
             if (!confirm('Opravdu chcete smazat tuto odpověď?')) return;
-            const password = passwordInput.value;
+            const password = passwordInput.value || localStorage.getItem('admin_password');
             try {
                 const response = await fetch(`/api/admin/data/${id}`, {
                     method: 'DELETE',
@@ -1035,7 +1035,7 @@
 
         async function deleteAllFeedback() {
             if (!confirm('⚠️ VAROVÁNÍ: Opravdu chcete smazat ÚPLNĚ VŠECHNY odpovědi? Tato akce je nevratná.')) return;
-            const password = passwordInput.value;
+            const password = passwordInput.value || localStorage.getItem('admin_password');
             try {
                 const response = await fetch('/api/admin/data/all', {
                     method: 'DELETE',
